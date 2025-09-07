@@ -4,8 +4,8 @@ def trfficScript(getDict):
 
 
     workType = {}
-    testWork = 'ok'
-    # testWork = None
+    # testWork = 'ok'
+    testWork = None
 
     # siteLink = "http://localhost:3020"
     siteLink = "https://happy-toad2.shop"
@@ -253,6 +253,7 @@ def trfficScript(getDict):
                                 refresh = True
                             continue
                         else:
+                            workedKeywordArr.append(workInfo['st_subject'])
                             break
                     
                     naverMainSearch(driver, workInfo['st_subject'], workType['pr_work_type'])
@@ -346,8 +347,6 @@ def trfficScript(getDict):
                         except Exception as e:
                             print(str(e))
                             continue
-                
-                pg.alert(f'{work} 작업 완료!!!')
 
             
             # 작업이 끝났으면 마지막 트래픽 에다가 현재 시간 업데이트
