@@ -737,9 +737,6 @@ def writeBlogMobile(driver,workBlogNum,contentArr):
         if subjectAlignStatus == True:
             break
 
-
-    pg.alert('잠깐만?')
-
     # 글 작성 완료 하는 부분!!!
     while True:
         pg.moveTo(200,500)
