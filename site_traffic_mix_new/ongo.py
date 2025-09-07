@@ -4,8 +4,8 @@ def trfficScript(getDict):
 
 
     workType = {}
-    # testWork = 'ok'
-    testWork = None
+    testWork = 'ok'
+    # testWork = None
 
     # siteLink = "http://localhost:3020"
     siteLink = "https://happy-toad2.shop"
@@ -41,6 +41,8 @@ def trfficScript(getDict):
     workType['pr_work_type'] = ''
     
     while True:
+
+
         if getDict['workTypeVal'] == 'mix':
             # PC랑 모바일 한번씩 번갈아가면서 돌기!! (무한 루프 돌면서 바뀜)
             if workType['pr_work_type'] is None or workType['pr_work_type'] == "" or workType['pr_work_type'] == 'pc':
@@ -88,6 +90,18 @@ def trfficScript(getDict):
                         # user_data = f'C:\\Users\\{pcUser}\\AppData\\Local\\Google\\Chrome\\User Data\\default'
                         # options.add_argument(f"user-data-dir={user_data}")
                         # options.add_argument(f'--profile-directory=Profile {profileInfo['pl_number']}')
+
+                        # 캐시 및 저장된 데이터 관련
+                        options.add_argument("--disable-background-timer-throttling")
+                        options.add_argument("--disable-backgrounding-occluded-windows")
+                        options.add_argument("--disable-renderer-backgrounding")
+                        options.add_argument("--disable-features=TranslateUI")
+                        
+                        # 쿠키 및 세션 완전 초기화
+                        options.add_argument("--disable-background-networking")
+                        options.add_argument("--disable-sync")
+
+
                         options.add_experimental_option("excludeSwitches", ["enable-automation"])
                         driver = webdriver.Chrome(options=options)
                         driver.get('https://www.naver.com')
@@ -103,7 +117,7 @@ def trfficScript(getDict):
                         pass
                 else:
                     try:
-                        res = requests.get(f"{siteLink}/api/v7/res_traffic_loop/get_user_agent").json()
+                        res = requests.get(f"{siteLink}/api/v7/res_traffic_work/get_user_agent").json()
                         print(res)
                         print(res['user_agent_info']['ua_content'])
                         if res['status'] == True and res['user_agent_info']['ua_content'] is not None:
@@ -116,6 +130,16 @@ def trfficScript(getDict):
                                 # options.add_argument(f'--profile-directory=Profile {profileInfo['pl_number']}')
 
                                 options.add_argument(f'user-agent={userAgentInfo}')
+
+                                # 캐시 및 저장된 데이터 관련
+                                options.add_argument("--disable-background-timer-throttling")
+                                options.add_argument("--disable-backgrounding-occluded-windows")
+                                options.add_argument("--disable-renderer-backgrounding")
+                                options.add_argument("--disable-features=TranslateUI")
+                                
+                                # 쿠키 및 세션 완전 초기화
+                                options.add_argument("--disable-background-networking")
+                                options.add_argument("--disable-sync")
                                 options.add_experimental_option("excludeSwitches", ["enable-automation"])
                                 driver = webdriver.Chrome(options=options)
                                 driver.get('https://www.naver.com')
@@ -153,7 +177,7 @@ def trfficScript(getDict):
             try:
                 activeArrLengthArr = [6,7]
                 activeArrInnerArr = [3,4]
-                workArr = create_active_array(activeArrLengthArr, activeArrInnerArr)
+                workArr = create_active_array(activeArrLengthArr, activeArrInnerArr, 3)
             except:
                 pg.alert('알수없는 오류!!')
                 sys.exit(1)
@@ -161,21 +185,11 @@ def trfficScript(getDict):
             print(workArr)
 
 
-            while True:
-                try:
-                    activeArrLengthArr = [7,8]
-                    activeArrInnerArr = [5,6]
-                    workArr = create_active_array(activeArrLengthArr, activeArrInnerArr, 3)
-                except:
-                    pg.alert('알수없는 오류!!')
-                    sys.exit(1)
-
-                print(workArr)
-                pg.alert('대기대기!!!')
-
-
             if testWork == 'ok':
-                workArr = ['notWork','work','realwork','work']
+                # workArr = ['notwork','realwork','work','realwork','work','notwork']
+                # workArr = ['work', 'realwork']
+                # workArr = ['realwork', 'work']
+                pass
             # 작업할 배열을 생성! workArr 은 'notWork'
             for work in workArr:
                 print(f'{work} 작업 돌기!!!!!')
@@ -183,13 +197,11 @@ def trfficScript(getDict):
                     # notWork 에서는 키워드에서 찾아서 검색하기!!
                     # 먼저 키워드를 불러오자!!!
 
-
-
                     while True:
                         print('not work 불러와야지?!')
                         try:
                             
-                            res = requests.get(f"{siteLink}/api/v7/res_traffic_loop/load_notwork").json()
+                            res = requests.get(f"{siteLink}/api/v7/res_traffic_work/load_notwork").json()
                             if res['status'] == False:
                                 continue
 
@@ -207,21 +219,27 @@ def trfficScript(getDict):
                     wait_float(1.2,1.9)
 
                     if workType['pr_work_type'] == 'mobile':
-                        searchMobileAnotherList(driver, 1, testWork)
+                        searchMobileAnotherList(driver, 1, testWork, workInfo['pk_content'])
                     else:
-                        searchPcAnotherList(driver, 1, testWork)
+                        searchPcAnotherList(driver, 1, testWork, workInfo['pk_content'])
 
                 elif work == 'work':
-                    duplicateErrCount = 0
                     # 먼저 작업 내용 불러오기!! clickStatus 가 false 인거 아무거나 하나 불러오기!!
+
+                    errCount = 0
+                    refresh = False # 아래 while 문에서만 쓰는 변수, 중복이 계속 있을시 1개밖에 안남았다고 판단, True 값을 넘겨서 조회 상태 전체 초기화
                     while True:
+                        errCount += 1
                         print(workedKeywordArr)
                         wait_float(0.3,0.5)
                         while True:
                             print('work 정보 가지고 오기!!!!')
                             try:
-                                res = requests.get(f"{siteLink}/api/v7/res_traffic_loop/load_work?group={workType['pr_group']}").json()
-                                if res['status']:
+                                res = requests.post(f"{siteLink}/api/v7/res_traffic_work/load_work",
+                                { 'group' : workType['pr_group'], 'refresh' : refresh }).json()
+                                print(res)
+                                refresh = False
+                                if res['status'] and res['get_work']:
                                     print(res)
                                     workInfo = res['get_work']
                                     break
@@ -230,34 +248,12 @@ def trfficScript(getDict):
                                 print(str(e))
                                 pass
                             
-                        if workInfo['st_subject'] not in workedKeywordArr:
-                            break
+                        if workInfo['st_subject'] in workedKeywordArr:
+                            if errCount > 5:
+                                refresh = True
+                            continue
                         else:
-                            while True:
-                                wait_float(0.3,0.5)
-                                print('중복 있으면')
-                                try:
-                                    res = requests.post(f"{siteLink}/api/v7/res_traffic_loop/duplicate_work_chk", {'work_id' : workInfo['st_id']}).json()
-                                    if res['status']:
-                                        break
-
-                                except Exception as e:
-                                    print(str(e))
-                                    pass
-
-
-                    # 조회하는 리스트에 추가하기~~
-                    while True:
-                        try:
-                            res = requests.post(f"{siteLink}/api/v7/res_traffic_loop/update_chk_work", {'st_id' : workInfo['st_id']}).json()
-                            print(res)
-                            if res['status'] == False:
-                                continue
-                            else:
-                                workedKeywordArr.append(workInfo['st_subject'])
-                                break
-                        except:
-                            pass
+                            break
                     
                     naverMainSearch(driver, workInfo['st_subject'], workType['pr_work_type'])
 
@@ -267,21 +263,27 @@ def trfficScript(getDict):
                     else:
                         searchPcAnotherList(driver, 1, testWork)
 
+
+                    
+                    
+
                     # 본 조회 작업 GOGO!!!
                     # 아래 함수에서 workInfo['work_type'] 가 click 이면 클릭 / 아니면 조회만 하게 해놨음
                     # 여기는 그냥 조회니까 check로 맞춰주기~
                     workInfo['work_type'] = 'check'
                     if workType['pr_work_type'] == 'mobile':
-                        targetWorkStatus = searchMobileContent(driver ,workInfo ,workType ,testWork)
+                        targetWork = searchMobileContent(driver ,workInfo ,workType ,testWork)
                     else:
-                        targetWorkStatus = searchPcContent(driver ,workInfo ,workType ,testWork)
+                        targetWork = searchPcContent(driver ,workInfo ,workType ,testWork)
 
-                    
+                    print(targetWork)
                     while True:
                         wait_float(0.3,0.9)
                         # chkRateStatus 는 st_use가 FALSE 인 값을 찾아서 한것이므로 TRUE로 업데이트!!
                         try:
-                            res = requests.post(f"{siteLink}/api/v7/res_traffic_loop/update_traffic_work", {'work_status' : targetWorkStatus, 'st_id' : workInfo['st_id']}).json()
+                            res = requests.post(f"{siteLink}/api/v7/res_traffic_work/update_traffic_work", {'status' : targetWork['status'], 'rate' : f"{targetWork['page']}/{targetWork['rate']}", 'st_id' : workInfo['st_id']}).json()
+
+                            print(res)
                             if res['status'] == True:
                                 break
                         except Exception as e:
@@ -289,14 +291,9 @@ def trfficScript(getDict):
                             continue
 
                 elif work =='realwork':
-                    realworkErrCount = 0
                     while True:
-                        realworkErrCount += 1
-                        if realworkErrCount > 10:
-                            pg.alert('더이상 할 작업이 없습니다! 종료합니다!')
-                            sys.exit(1)
                         try:
-                            res = requests.get(f"{siteLink}/api/v7/res_traffic_loop/load_realwork_mix?group={workType['pr_group']}&work_type={workType['pr_work_type']}").json()
+                            res = requests.get(f"{siteLink}/api/v7/res_traffic_work/load_realwork?group={workType['pr_group']}&work_type={workType['pr_work_type']}").json()
                             print('realwork 정보 가지고 오기!!')
                             print(res)
                             if res['status']:
@@ -304,23 +301,21 @@ def trfficScript(getDict):
                                 if workInfo['st_subject'] not in workedKeywordArr:
                                     workedKeywordArr.append(workInfo['st_subject'])
                                     break
-                                else:
-                                    break
 
                             
                         except Exception as e:
                             print(str(e))
                             pass
 
-                    # 조회하는 리스트에 추가하기~~
-                    while True:
-                        try:
-                            res = requests.post(f"{siteLink}/api/v7/res_traffic_loop/update_chk_realwork", {'st_id' : workInfo['st_id'], 'type' : workType['pr_work_type']}).json()
-                            print(res)
-                            if res['status']:
-                                break
-                        except:
-                            pass
+                    # # 조회하는 리스트에 추가하기~~
+                    # while True:
+                    #     try:
+                    #         res = requests.post(f"{siteLink}/api/v7/res_traffic_work/update_chk_realwork", {'st_id' : workInfo['st_id'], 'type' : workType['pr_work_type']}).json()
+                    #         print(res)
+                    #         if res['status']:
+                    #             break
+                    #     except:
+                    #         pass
                     
                     naverMainSearch(driver, workInfo['st_subject'], workType['pr_work_type'])
 
@@ -331,30 +326,35 @@ def trfficScript(getDict):
                     else:
                         searchPcAnotherList(driver, 1, testWork)
 
+
                     # 본 조회 작업 GOGO!!!
                     # 아래 함수에서 workInfo['work_type'] 가 click 이면 클릭 / 아니면 조회만 하게 해놨음
                     # 여기는 그냥 클릭이니까 click 으로 맞춰주기~
                     workInfo['work_type'] = 'click'
                     if workType['pr_work_type'] == 'mobile':
-                        targetWorkStatus = searchMobileContent(driver ,workInfo ,workType ,testWork)
+                        targetWork = searchMobileContent(driver ,workInfo ,workType ,testWork)
                     else:
-                        targetWorkStatus = searchPcContent(driver ,workInfo ,workType ,testWork)
+                        targetWork = searchPcContent(driver ,workInfo ,workType ,testWork)
                     while True:
                         wait_float(0.3,0.9)
                         # chkRateStatus 는 st_use가 FALSE 인 값을 찾아서 한것이므로 TRUE로 업데이트!!
                         try:
-                            res = requests.post(f"{siteLink}/api/v7/res_traffic_loop/update_traffic_realwork", {'work_status' : targetWorkStatus, 'st_id' : workInfo['st_id']}).json()
+                            res = requests.post(f"{siteLink}/api/v7/res_traffic_work/update_traffic_realwork", {'status' : targetWork['status'], 'rate' : f"{targetWork['page']}/{targetWork['rate']}", 'st_id' : workInfo['st_id'], 'work_type' : workType['pr_work_type']}).json()
+
                             if res['status'] == True:
                                 break
                         except Exception as e:
                             print(str(e))
                             continue
+                
+                pg.alert(f'{work} 작업 완료!!!')
 
+            
             # 작업이 끝났으면 마지막 트래픽 에다가 현재 시간 업데이트
             while True:
                 wait_float(0.3,0.9)
                 try:
-                    res = requests.get(f"{siteLink}/api/v7/res_traffic_loop/update_last_traffic?sl_id={pcId}").json()
+                    res = requests.get(f"{siteLink}/api/v7/res_traffic_work/update_last_traffic?sl_id={pcId}").json()
                     if res['status'] == True:
                         break
                 except Exception as e:

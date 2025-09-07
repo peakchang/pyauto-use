@@ -902,10 +902,11 @@ def naverLogin_mobile(driver, idInfo):
                 wait_float(0.3,0.5)
                 captchaWrap = driver.find_elements(by=By.CSS_SELECTOR, value=".captcha_wrap")
                 if len(captchaWrap) > 0:
+                    pg.alert('캡챠 체크!!!!!')
                     print('캡챠 뜸!!')
                     wait_float(3.5,5.5)
                     driver.get('https://m.naver.com')
-                    break
+                    return True
             except:
                 pass
 

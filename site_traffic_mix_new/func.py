@@ -52,12 +52,11 @@ from bs4 import BeautifulSoup
 import urllib.parse
 
 
-def create_ready_array():
-    # 랜덤으로 3 또는 4를 선택합니다.
-    num = random.choice([3, 4])
-    # 'test' 값이 num_tests 개수만큼 들어가는 배열을 생성합니다.
-    ready_array = ['notWork'] * num
-    return ready_array
+keywords = [
+    "요리", "맛집", "생생", "한우", "모임",
+    "일식", "양식", "한식", "고깃", "고기",
+    "구이", "족발", "장어", "레스토랑"
+]
 
 
 def create_active_array(lengthArr, innerArr, num_realworks=1):
@@ -82,7 +81,6 @@ def create_active_array(lengthArr, innerArr, num_realworks=1):
             array[pos] = 'realwork'
     
     return array
-
 
 def changeIp():
     try:
@@ -128,7 +126,6 @@ def changeIp():
                 continue
     return getIp
 
-
 def focus_window(winName):
     while True:
         try:
@@ -152,31 +149,6 @@ def wait_float(start, end):
     wait_ran = random.uniform(start, end)
     time.sleep(wait_ran)
 
-def process_array(data, dataStr, type = "free"):
-
-    # 1. 배열을 랜덤하게 섞기
-    random.shuffle(data)
-    
-    # 2. cw_work_count 값에 따라 정렬하기 (작은 순서)
-    sorted_data = sorted(data, key=lambda x: x[dataStr])
-
-    if len(sorted_data) == 0:
-        return False
-    if type == "free":
-        maxNum = len(sorted_data)
-        ranNum = 0
-        if maxNum > 15:
-            ranNum = random.randrange(13,16)
-        else:
-            result = math.ceil(maxNum / 2)
-            ranNum = random.randrange(result,maxNum)
-        # 3. 상위 15개 항목 추출
-        topValue = sorted_data[:ranNum]
-    else:
-        topValue = sorted_data[0]
-
-    return topValue
-
 def active_chrome(driver):
     chrome_windows = pg.getWindowsWithTitle("Chrome")[0]
     try:
@@ -191,173 +163,8 @@ def active_chrome(driver):
         # chrome_windows.maximize()
     return
 
-def check_file_exists(directory, filename):
-    
-    # Construct the full file path
-    file_path = os.path.join(directory, filename)
-    
-    # Check if the file exists
-    if os.path.isfile(file_path):
-        return True
-    else:
-        return False
-    
-def searchCafeContent(driver, workInfo, test = None):
-
-    targetWorkStatus = False
-
-    try:
-        print('여기서는 카페 작업!!!')
-        scrollRanVal = random.randrange(5, 12)
-        errCount = 0
-        while True:
-            errCount += 1
-            wait_float(1.2,1.9)
-
-            try:
-                topBtns = driver.find_elements(by=By.CSS_SELECTOR, value=".flick_bx")
-                for topBtn in topBtns:
-                    if "카페" in topBtn.text:
-                        topBtn.click()
-                        targetWorkStatus = True
-                        break
-            except:
-                pass
-
-
-            try:
-                moreCafeBtns = driver.find_elements(by=By.CSS_SELECTOR, value=".mod_more_wrap a")
-                for moreCafeBtn in moreCafeBtns:
-                    if "카페" in moreCafeBtn.text:
-                        moreCafeBtn.click()
-                        break
-            except Exception as e:
-                print(str(e))
-                print('카페 더보기 클릭 에러!!')
-                pass
-
-            try:
-                cafeListChk = driver.find_element(By.XPATH, '//*[@id="snb"]/div[1]/div/div[1]/a[1]')
-                if "관련도" in cafeListChk.text:
-                    break
-            except Exception as e:
-                print(str(e))
-                print('카페 더보기 클릭 후 관련도 못찾는 에러!!')
-                if errCount > 4:
-                    break
-                pass
-        
-        for i in range(2):
-            pg.press('end')
-            wait_float(2.1,2.9)
-        
-
-        while True:
-            try:
-                titleList = driver.find_elements(by=By.CSS_SELECTOR, value=".title_link")
-                if len(titleList) > 0:
-                    break
-            except Exception as e:
-                print(str(e))
-                print('카페 글 리스트 못찾는 에러!!')
-                pass
-
-        # 본격적으로 게시물 찾기 없을때를 대비해 noSearchCount / noSearchStatus 준비
-        noSearchCount = 0
-        noSearchStatus = False
-
-        oddCount = 0
-        while True:
-            oddCount += 1
-            noSearchCount += 1
-            if noSearchCount > 5:
-                noSearchStatus = True
-                return 'noSearch'
-            searchSuccess = False
-            try:
-                for title in titleList:
-                    print(f"찾을 링크 : {workInfo['st_link']} / 찾은 링크 : {title.get_attribute('href')}")
-                    if workInfo['st_link'] in title.get_attribute('href'):
-                        title.click()
-                        searchSuccess = True
-                        wait_float(1.2,1.9)
-                        break
-            except:
-                pg.moveTo(300,400)
-                print('링크 클릭 안됨! 스크롤 올리기!')
-                if oddCount % 2 == 0:
-                    pg.scroll(200)
-                else:
-                    pg.scroll(-200)
-            if searchSuccess == True:
-                break
-        if noSearchStatus == False:
-            # noSearchStatus 가 False로 정상 작업 GOGO!!
-
-            for k in range(scrollRanVal):
-                pg.moveTo(300,400)
-                pg.scroll(-150)
-                if test == 'ok':
-                    wait_float(0.1,0.4)
-                else:
-                    wait_float(2.5,3.5)
-
-            if workInfo['st_addlink']:
-
-                aTagClickSuccess = False
-                oddCount = 0
-                while True:
-                    oddCount += 1
-                    aTagList = driver.find_elements(by=By.CSS_SELECTOR, value="a")
-
-                    try:
-                        for aTag in aTagList:
-                            print(aTag)
-                            print(aTag.get_attribute('href'))
-                            if aTag.get_attribute('href') is not None:
-                                if workInfo['st_addlink'] in aTag.get_attribute('href'):
-                                    aTag.click()
-                                    aTagClickSuccess = True
-                                    wait_float(1.2,1.9)
-                                    break
-                    except:
-                        print('링크 클릭 안됨! 스크롤 올리기!')
-                        if oddCount % 2 == 0:
-                            pg.scroll(200)
-                        else:
-                            pg.scroll(-200)
-
-                    try:
-                        closeBtn = driver.find_element(by=By.CSS_SELECTOR, value=".btns .ButtonBase--gray")
-                        closeBtn.click()
-                    except:
-                        pass
-
-                    if aTagClickSuccess == True:
-                        break
-
-                driver.switch_to.window(driver.window_handles[1])
-                for k in range(scrollRanVal):
-                    pg.moveTo(300,400)
-                    pg.scroll(-150)
-                    if test == 'ok':
-                        wait_float(0.1,0.4)
-                    else:
-                        wait_float(2.5,3.5)
-
-        targetWorkStatus = True
-
-    except Exception as e:
-        print(e)
-        targetWorkStatus = False
-    
-    return targetWorkStatus
-
-
-
 # PC 버전 함수들!!!!!
-
-def searchPcAnotherList(driver, workCount, test = None):
+def searchPcAnotherList(driver, workCount, test = None, subject = ""):
     errCount = 0
     onotherListStatus = True
     while True:
@@ -485,10 +292,10 @@ def searchPcContent(driver, workInfo, workType, test = None):
             errCount = 0
             break
         wait_float(0.5,1.2)
-        targetWorkStatus = searchContentInnerWork(driver, workInfo, workType, test)
+        targetWork = searchContentInnerWork(driver, workInfo, workType, test)
         print(f'메인에서 클릭 또는 노출 확인 완료')
-        if targetWorkStatus == True:
-            return targetWorkStatus
+        if targetWork['status'] == True:
+            return targetWork
     # 메인에서 못찾았을 경우 뒤로 가기
     # 먼저 더보기 or 2페이지 클릭
 
@@ -547,6 +354,9 @@ def searchPcContent(driver, workInfo, workType, test = None):
     # 본격적으로 순위 찾는 부분!!
     scIdx = 2
     while True:
+
+        targetWork = searchContentInnerWork(driver, workInfo, workType, test, scIdx)
+
         scIdx += 1
         if scIdx > 11:
             # 10페이지 넘어가면 순위권에 없는거임 그럼 걍 리턴 쳐버리기~
@@ -557,11 +367,11 @@ def searchPcContent(driver, workInfo, workType, test = None):
                 du = 500     # 1000 ms ==1second
                 sd.Beep(fr, du)
 
-            return targetWorkStatus
+            return targetWork
 
-        targetWorkStatus = searchContentInnerWork(driver, workInfo, workType, test)
-        if targetWorkStatus == True:
-            return targetWorkStatus
+        
+        if targetWork['status'] == True:
+            return targetWork
         else:
             while True:
                 try:
@@ -581,10 +391,15 @@ def searchPcContent(driver, workInfo, workType, test = None):
                     print('검색결과 페이지 클릭 에러!')
                     pass
 
-
-
 # 모바일 버전 함수들!!!!!!!!!!!!!!
-def searchMobileAnotherList(driver, workCount, test = None):
+def searchMobileAnotherList(driver, workCount, test = None, subject = ""):
+
+    keywords = [
+        "요리", "맛집", "생생", "한우", "모임",
+        "일식", "양식", "한식", "고깃", "고기",
+        "구이", "족발", "장어", "레스토랑"
+    ]
+
     errCount = 0
     onotherListStatus = True
     while True:
@@ -616,11 +431,17 @@ def searchMobileAnotherList(driver, workCount, test = None):
             pass
 
         try:
-            w4 = driver.find_elements(by=By.CSS_SELECTOR, value=".tit_area")
+            w4Temps = driver.find_elements(by=By.CSS_SELECTOR, value=".tit_area")
+            w4 = [
+                el for el in w4Temps
+                if not any(word in el.text for word in keywords)
+            ]
         except:
             print('viewtabList 찾기 에러~')
             pass
 
+        print('------------ w4 체크체크!!!')
+        print(w4)
         
         onotherList = w1 + w2 + w3 + w4
         if len(onotherList) > 0:
@@ -779,6 +600,108 @@ def searchMobileAnotherList(driver, workCount, test = None):
             print('타겟 클릭 실패! 넘어가기!')
             pass
 
+def searchMobileContent(driver, workInfo, workType, test = None):
+    targetWork = {}
+
+    # targetWorkStatus 는 순위권 내에서 찾으면 True / 아니면 False를 리턴한다~
+    targetWork['status'] = False
+
+    # 먼저 메인에서 3번 찾아보기!
+    errCount = 0
+    while True:
+        errCount += 1
+        if errCount > 3:
+            errCount = 0
+            break
+        wait_float(0.5,1.2)
+        targetWork = searchContentInnerWork(driver, workInfo, workType, test)
+
+        print('메인 targetWork 체크!!!')
+
+        if targetWork['status'] == True:
+            return targetWork
+    
+    # 메인에서 못찾았을 경우 뒤로 가기
+    # 먼저 더보기 or 2페이지 클릭
+
+
+    # 메인에서 검색결과 더보기 클릭하기~
+    errCount = 0
+    while True:
+        errCount += 1
+        if errCount > 10:
+            pg.press('home')
+            errCount = 0
+        print('상세 페이지 노출되어 있는거 없음 검색결과 클릭 시작!')
+        moreTabStatus = False
+        wait_float(0.5,0.9)
+        try:
+            moreTab1 = driver.find_elements(by=By.CSS_SELECTOR, value=".group_more")
+            moreTab2 = driver.find_elements(by=By.CSS_SELECTOR, value=".link_feed_more")
+            moreTab = moreTab1 + moreTab2
+            for more in moreTab:
+                print(more.text)
+                if '검색결과' in more.text:
+                    moreTabStatus = True
+                    more.click()
+                    break
+
+            if moreTabStatus == True:
+                break
+            else:
+                pagingList = driver.find_elements(by=By.CSS_SELECTOR, value=".pgn")
+                for page in pagingList:
+                    if page.text == '2':
+                        page.click()
+                        moreTabStatus = True
+                        break
+                if moreTabStatus == True:
+                    break
+        except Exception as e:
+            wait_float(0.5,0.9)
+            print('검색창에서 "검색결과" 클릭 에러!')
+            active_chrome(driver)
+            focus_window('Chrome')
+            pg.press('end')
+            pass
+    
+
+    # 검색결과 클릭 완료!!
+
+    # 본격적으로 순위 찾는 부분!!
+    scIdx = 2
+    while True:
+
+        targetWork = searchContentInnerWork(driver, workInfo, workType, test, scIdx)
+        print('페이징 targetWork 체크!!!')
+        scIdx += 1
+        if scIdx > 11:
+
+            print('페이지 넘어가는건 확인 했지?')
+            # 10페이지 넘어가면 순위권에 없는거임 그럼 걍 리턴 쳐버리기~
+            return targetWork
+        
+        if targetWork['status'] == True:
+            return targetWork
+        else:
+            while True:
+                try:
+                    pagingList = driver.find_elements(by=By.CSS_SELECTOR, value=".pgn")
+
+                    wait_float(0.3,0.5)
+                    for page in pagingList:
+                        print(f"찾은 페이지 값은? {int(page.text)}")
+                        print(f"l 값은?? {scIdx}")
+                        if int(page.text) == scIdx:
+                            page.click()
+                            print(f"클릭한 페이지 값은? {int(scIdx)}")
+                            break
+                    break
+                except Exception as e:
+                    print(str(e))
+                    print('검색결과 페이지 클릭 에러!')
+                    pass
+
 def goBackToMobileSearchTab(driver):
     while True:
         wait_float(1.2,1.9)
@@ -857,105 +780,13 @@ def goBackToMobileSearchTab(driver):
                 if handle != main_window:
                     # 남기고 싶은 창이 아니면 닫기
                     driver.switch_to.window(handle)
-                    driver.close()
+                    driver.quit()
                     
             driver.switch_to.window(main_window)
         except:
             pass
     
     pg.press('home')
-
-def searchMobileContent(driver, workInfo, workType, test = None):
-    # targetWorkStatus 는 순위권 내에서 찾으면 True / 아니면 False를 리턴한다~
-    targetWorkStatus = False
-
-    # 먼저 메인에서 3번 찾아보기!
-    errCount = 0
-    while True:
-        errCount += 1
-        if errCount > 3:
-            errCount = 0
-            break
-        wait_float(0.5,1.2)
-        targetWorkStatus = searchContentInnerWork(driver, workInfo, workType, test)
-        if targetWorkStatus == True:
-            return targetWorkStatus
-    
-    # 메인에서 못찾았을 경우 뒤로 가기
-    # 먼저 더보기 or 2페이지 클릭
-
-    errCount = 0
-    while True:
-        errCount += 1
-        if errCount > 10:
-            pg.press('home')
-            errCount = 0
-        print('상세 페이지 노출되어 있는거 없음 검색결과 클릭 시작!')
-        moreTabStatus = False
-        wait_float(0.5,0.9)
-        try:
-            moreTab1 = driver.find_elements(by=By.CSS_SELECTOR, value=".group_more")
-            moreTab2 = driver.find_elements(by=By.CSS_SELECTOR, value=".link_feed_more")
-            moreTab = moreTab1 + moreTab2
-            for more in moreTab:
-                print(more.text)
-                if '검색결과' in more.text:
-                    moreTabStatus = True
-                    more.click()
-                    break
-
-            if moreTabStatus == True:
-                break
-            else:
-                pagingList = driver.find_elements(by=By.CSS_SELECTOR, value=".pgn")
-                for page in pagingList:
-                    if page.text == '2':
-                        page.click()
-                        moreTabStatus = True
-                        break
-                if moreTabStatus == True:
-                    break
-        except Exception as e:
-            wait_float(0.5,0.9)
-            print('검색창에서 "검색결과" 클릭 에러!')
-            active_chrome(driver)
-            focus_window('Chrome')
-            pg.press('end')
-            pass
-    
-
-    # 검색결과 클릭 완료!!
-
-    # 본격적으로 순위 찾는 부분!!
-    scIdx = 2
-    while True:
-        scIdx += 1
-        if scIdx > 11:
-            # 10페이지 넘어가면 순위권에 없는거임 그럼 걍 리턴 쳐버리기~
-            return targetWorkStatus
-
-        targetWorkStatus = searchContentInnerWork(driver, workInfo, workType, test)
-        if targetWorkStatus == True:
-            return targetWorkStatus
-        else:
-            while True:
-                try:
-                    pagingList = driver.find_elements(by=By.CSS_SELECTOR, value=".pgn")
-
-                    wait_float(0.3,0.5)
-                    for page in pagingList:
-                        print(f"찾은 페이지 값은? {int(page.text)}")
-                        print(f"l 값은?? {scIdx}")
-                        if int(page.text) == scIdx:
-                            page.click()
-                            print(f"클릭한 페이지 값은? {int(scIdx)}")
-                            break
-                    break
-                except Exception as e:
-                    print(str(e))
-                    print('검색결과 페이지 클릭 에러!')
-                    pass
-
 
 
 # 모바일 / PC 공통 함수!!!!!!!!!!!!!!!!
@@ -1089,38 +920,47 @@ def naverMainSearch(driver, searchTxt, workDevice):
                 # print(str(e))
                 pass
 
-def searchContentInnerWork(driver, workInfo, workType, test):
-    targetWorkStatus = False
+def searchContentInnerWork(driver, workInfo, workType, test, pgn = 1):
+
+    targetWork = {}
+
+    targetWork['status'] = False
+    targetWork['page'] = pgn
+    targetWork['rate'] = 0
+
     try:
-        targetList = driver.find_elements(by=By.CSS_SELECTOR, value=".rdmOs_JPV27pWNOhAhxL")
+        targetList = driver.find_elements(by=By.CSS_SELECTOR, value=".sds-comps-text.sds-comps-text-ellipsis.sds-comps-text-ellipsis-2.sds-comps-text-type-headline1.sds-comps-text-weight-sm")
+
+        print(targetList)
+
         actTarget = ""
-        for target in targetList:
-            getHref = target.get_attribute('href')
+        for idx, target in enumerate(targetList):
+
+            getAtag = target.find_element(by=By.CSS_SELECTOR, value="a")
+            getHref = getAtag.get_attribute('href')
             st_link = str(workInfo['st_link']).strip()
             getHref = getHref.strip()
 
             print(st_link)
             print(getHref)
+            print('--------------------------------')
 
             wait_float(0.1,0.3)
             if workInfo['st_same_link']:
                 if st_link == getHref:
                     print('여기까지 왔다!!')
-                    actTarget = target
-                    # workInfo['work_type'] 이 클릭이면 클릭 / 아니면 그냥 해당 위치로 스크롤만 하고 패스~
-                    targetWorkStatus = True
+                    actTarget = getAtag
+                    targetWork['rate'] = idx + 1
+                    targetWork['status'] = True
                     break
             else:
                 if st_link in getHref:
-                    actTarget = target
-                    # workInfo['work_type'] 이 클릭이면 클릭 / 아니면 그냥 해당 위치로 스크롤만 하고 패스~
-                    targetWorkStatus = True
+                    actTarget = getAtag
+                    targetWork['rate'] = idx + 1
+                    targetWork['status'] = True
                     break
 
-
-                
-        print('나와야지 ㅠㅠㅠ')
-        if targetWorkStatus == True:
+        if targetWork['status'] == True:
             wait_float(1.2,1.5)
             browserMiddleMoveJsCode = """
             var element = arguments[0];
@@ -1133,6 +973,7 @@ def searchContentInnerWork(driver, workInfo, workType, test):
             wait_float(1.2,1.5)
             print('위치로 갔다잉~')
 
+            # workInfo['work_type'] 이 클릭이면 클릭 / 아니면 그냥 해당 위치로 스크롤만 하고 패스~
             if workInfo['work_type'] == 'click':
 
                 # 먼저 타겟 클릭하기~
@@ -1150,9 +991,11 @@ def searchContentInnerWork(driver, workInfo, workType, test):
                             errCount = 0
                     print('타겟 클릭~')
                     try:
+                        print(actTarget)
                         actTarget.click()
                         break
-                    except:
+                    except Exception as e:
+                        print(e)
                         wait_float(0.5,1.2)
                         pg.scroll(-150)
                         pass
@@ -1167,49 +1010,49 @@ def searchContentInnerWork(driver, workInfo, workType, test):
                     else:
                         wait_float(5.5,7.5)
                 
-                if workInfo['st_addlink']:
-                    targetLink = workInfo['st_addlink']
-                    focus_window('Chrome')
-                    wait_float(0.3,0.5)
-                    pg.press('home')
+                # if workInfo['st_addlink']:
+                #     targetLink = workInfo['st_addlink']
+                #     focus_window('Chrome')
+                #     wait_float(0.3,0.5)
+                #     pg.press('home')
 
-                    innerLinkWorkStatus = False
-                    while True:
-                        innerLinkList = driver.find_elements(by=By.CSS_SELECTOR, value="a")
-                        wait_float(0.1,0.2)
-                        for aTag in innerLinkList:
-                            try:
-                                getAtagHref = aTag.get_attribute('href')
-                                if getAtagHref is None:
-                                    continue
+                #     innerLinkWorkStatus = False
+                #     while True:
+                #         innerLinkList = driver.find_elements(by=By.CSS_SELECTOR, value="a")
+                #         wait_float(0.1,0.2)
+                #         for aTag in innerLinkList:
+                #             try:
+                #                 getAtagHref = aTag.get_attribute('href')
+                #                 if getAtagHref is None:
+                #                     continue
 
-                                if targetLink in getAtagHref or targetLink == getAtagHref:
-                                    while True:
-                                        try:
-                                            pg.moveTo(300,400)
-                                            wait_float(1.2,1.9)
-                                            pg.scroll(-200)
-                                            wait_float(1.2,1.9)
-                                            aTag.click()
-                                            innerLinkWorkStatus = True
-                                            break
-                                        except Exception as e:
-                                            print(e)
-                                            pass
+                #                 if targetLink in getAtagHref or targetLink == getAtagHref:
+                #                     while True:
+                #                         try:
+                #                             pg.moveTo(300,400)
+                #                             wait_float(1.2,1.9)
+                #                             pg.scroll(-200)
+                #                             wait_float(1.2,1.9)
+                #                             aTag.click()
+                #                             innerLinkWorkStatus = True
+                #                             break
+                #                         except Exception as e:
+                #                             print(e)
+                #                             pass
 
-                                    scrollRanVal = random.randrange(5, 12)
-                                    for k in range(scrollRanVal):
-                                        pg.moveTo(300,400)
-                                        pg.scroll(-150)
-                                        if test == 'ok':
-                                            wait_float(0.1,0.5)
-                                        else:
-                                            wait_float(5.5,7.5)
-                                    break
-                            except:
-                                pass
-                        if innerLinkWorkStatus:
-                            break
+                #                     scrollRanVal = random.randrange(5, 12)
+                #                     for k in range(scrollRanVal):
+                #                         pg.moveTo(300,400)
+                #                         pg.scroll(-150)
+                #                         if test == 'ok':
+                #                             wait_float(0.1,0.5)
+                #                         else:
+                #                             wait_float(5.5,7.5)
+                #                     break
+                #             except:
+                #                 pass
+                #         if innerLinkWorkStatus:
+                #             break
                 if workType['pr_work_type'] == 'mobile':
                     goBackToMobileSearchTab(driver)
                 else:
@@ -1218,8 +1061,10 @@ def searchContentInnerWork(driver, workInfo, workType, test):
             # 여기서 작업 하고 targetWorkStatus True로 변경
         
 
-        print(f"targetWorkStatus : {targetWorkStatus}")
-        return targetWorkStatus
+        print(f"targetWorkStatus : {targetWork}")
+
+        print('여기까지는 오는거지??')
+        return targetWork
     except Exception as e:
         print(str(e))
         pass
