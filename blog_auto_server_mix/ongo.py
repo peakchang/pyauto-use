@@ -1,10 +1,13 @@
 from func import *
-
+from dotenv import load_dotenv
 
 # chrome://version/ 에서 '프로필경로' 복사, 난 왜 디폴트만 되지?? 뭔... 딴건 필요 없쓰....
 
 
 def goScript(getDict):
+
+    load_dotenv()
+    openApiKey = os.getenv("OPEN_API_KEY")
 
     # siteLink = "http://localhost:3020"
     siteLink = "https://happy-toad2.shop"
@@ -302,9 +305,9 @@ def goScript(getDict):
             if ex_subject is not None:
                 while True:
             
-                    # client = OpenAI(
-                    #     api_key = "",
-                    # )
+                    client = OpenAI(
+                        api_key = openApiKey,
+                    )
 
 
                     userInput = f"{ex_subject} 이라는 제목으로 600자 내외 블로그에 작성할 글좀 한줄에 70자 미만으로 줄바꿈 많이 하고 여러 단으로 작성해줘"

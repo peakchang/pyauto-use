@@ -738,12 +738,7 @@ def writeBlogMobile(driver,workBlogNum,contentArr):
             break
 
 
-    
-         
-
-
-
-
+    pg.alert('잠깐만?')
 
     # 글 작성 완료 하는 부분!!!
     while True:
@@ -1367,24 +1362,26 @@ def writeBlog(driver,workBlogNum,contentArr):
                     except:
                         pass
 
+                
+
                     try:
+
                         linkBox = driver.find_element(by=By.CSS_SELECTOR, value='.se-custom-layer-option-link')
                         if linkBox:
-                            break
-                    except:
-                        pass
-                
-                while True:
-                    try:
-                        linkInput = driver.find_element(by=By.CSS_SELECTOR, value='.se-custom-layer-link-input')
-                        linkInput.click()
+                            linkInput = driver.find_element(by=By.CSS_SELECTOR, value='.se-custom-layer-link-input')
+                            linkInput.click()
 
-                        keyboard.write(text=chkAction[2], delay=0.05)
+                            if linkInput.get_attribute('value') == "":
+                                linkInput.clear()
+                                wait_float(0.3,0.9)
+                            keyboard.write(text=chkAction[2], delay=0.05)
 
-                        linkChkBtn = driver.find_element(by=By.CSS_SELECTOR, value='.se-custom-layer-link-apply-button')
-                        linkChkBtn.click()
+                            linkChkBtn = driver.find_element(by=By.CSS_SELECTOR, value='.se-custom-layer-link-apply-button')
+                            linkChkBtn.click()
                         
-                    except:
+                    except Exception as e:
+                        print(str(e))
+                        pg.press('enter')
                         pass
 
                     try:
