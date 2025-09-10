@@ -1,0 +1,3 @@
+pyinstaller.exe -F -n=band main.py
+
+pyinstaller.exe -F main.py

@@ -4,10 +4,12 @@ import queue
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.alert import Alert
 import pyautogui as pg
 import clipboard as cb
+import os
 
-from func import band_write_loop, band_join_loop, time, wait_float
+from func import band_write_loop, band_join_loop, time, wait_float, focus_window
 
 def wait_ready(driver, timeout=15):
     """
@@ -45,6 +47,9 @@ class BrowserWorker:
         self.headless = headless
         self.on_message = on_message
 
+        self.driver_ready = threading.Event()   # _make_driver 끝났는지
+        self.making_driver = threading.Event()  # 만들고 있는 중인지
+
     # ===== 내부 유틸 =====
     def _notify(self, msg: str):
         if self.on_message:
@@ -58,13 +63,49 @@ class BrowserWorker:
         if self.thread and self.thread.is_alive():
             self._notify("브라우저가 이미 실행 중입니다.")
             return
+        
+        self.driver_ready.clear()
+        self.making_driver.set()
+
         self.stop_event.clear()
         self.thread = threading.Thread(target=self._loop, daemon=True)
         self.thread.start()
 
+    def _loop(self):
+        try:
+            self._make_driver()
+            self.driver_ready.set()        # ✅ 생성 완료 신호
+            self._notify("브라우저가 준비되었습니다.")
+        except Exception as e:
+            self._notify(f"드라이버 생성 실패: {e}")
+            return
+
+        while not self.stop_event.is_set():
+            try:
+                task = self.cmd_q.get(timeout=0.1)
+            except queue.Empty:
+                continue
+            try:
+                self.cancel_event.clear()
+                task()
+            except Exception as e:
+                self._notify(f"작업 에러: {e}")
+
+        try:
+            self.driver.quit()
+        except Exception:
+            pass
+        self.driver = None
+        self._notify("브라우저가 종료되었습니다.")
+
 
     # 시작 부분!! 밴드 로그인 바로 해버리기!!!
     def _make_driver(self):
+        
+        nowPath = os.getcwd()
+        print(nowPath)
+        pg.alert('프로그램을 시작합니다.')
+
         opts = Options()
         if self.headless:
             opts.add_argument("--headless=new")
@@ -122,6 +163,7 @@ class BrowserWorker:
         print(getpwd)
 
         while True:
+            focus_window('Chrome')
             wait_float(1.5, 2.5)
             try:
                 idInput = self.driver.find_element(by=By.CSS_SELECTOR, value="#id")
@@ -155,33 +197,18 @@ class BrowserWorker:
             except:
                 pass
 
-
-
-    def _loop(self):
-        try:
-            self._make_driver()
-            self._notify("브라우저가 준비되었습니다.")
-        except Exception as e:
-            self._notify(f"드라이버 생성 실패: {e}")
-            return
-
-        while not self.stop_event.is_set():
+        while True:
             try:
-                task = self.cmd_q.get(timeout=0.1)
-            except queue.Empty:
-                continue
-            try:
-                self.cancel_event.clear()
-                task()
+                wait_float(1.5,.25)
+                bandMainChk = self.driver.find_elements(by=By.CSS_SELECTOR, value=".headerWidgetArea")
+                if len(bandMainChk) > 0:
+                    break
             except Exception as e:
-                self._notify(f"작업 에러: {e}")
+                print('메인페이지 못찾는 에러!!')
 
-        try:
-            self.driver.quit()
-        except Exception:
-            pass
-        self.driver = None
-        self._notify("브라우저가 종료되었습니다.")
+
+
+    
 
     def stop(self):
         self.cancel_event.set()
@@ -203,6 +230,12 @@ class BrowserWorker:
         - 대기 중(scroll_pending) 이면
         새로 요청된 스크롤은 '무시'하고 메시지만 띄웁니다.
         """
+
+        if not self.driver_ready.is_set():   # 또는: if self.driver is None:
+            self._alert_not_ready()
+            return
+        
+
         if self.busy.is_set() or self.join_pending:
             self._notify("작업중입니다. 먼저 멈춤을 눌러주세요.")
             return
@@ -222,7 +255,7 @@ class BrowserWorker:
 
             self.busy.set()  # 길게 도는 작업 시작!
             self.join_pending = False
-            self._notify("네이버 스크롤을 시작합니다. (멈춤 버튼으로 중단 가능)")
+            self._notify("밴드 가입 작업을 시작합니다. (멈춤 버튼으로 중단 가능)")
 
             try:
                 band_join_loop(
@@ -236,13 +269,19 @@ class BrowserWorker:
 
         self.cmd_q.put(job)
 
-    def start_band_write(self, **kwargs):
+    def start_band_write(self):
         """
         네이버 스크롤은 '길게 도는 작업'이므로
         - 실행 중(busy) 이거나
         - 대기 중(scroll_pending) 이면
         새로 요청된 스크롤은 '무시'하고 메시지만 띄웁니다.
         """
+
+        if not self.driver_ready.is_set():   # 또는: if self.driver is None:
+            self._alert_not_ready()
+            return
+        
+
         if self.busy.is_set() or self.scroll_pending:
             self._notify("작업중입니다. 먼저 멈춤을 눌러주세요.")
             return
@@ -262,18 +301,17 @@ class BrowserWorker:
 
             self.busy.set()  # 길게 도는 작업 시작!
             self.scroll_pending = False
-            self._notify("네이버 스크롤을 시작합니다. (멈춤 버튼으로 중단 가능)")
+            self._notify("밴드 글쓰기 작업을 시작합니다. (멈춤 버튼으로 중단 가능)")
 
             try:
                 band_write_loop(
                     self.driver,
                     self.cancel_event,
                     self.stop_event,
-                    **kwargs
                 )
             finally:
                 self.busy.clear()
-                self._notify("네이버 스크롤이 종료되었습니다.")
+                self._notify("밴드 가입 작업이 종료되었습니다.")
 
         self.cmd_q.put(job)
 
@@ -289,3 +327,15 @@ class BrowserWorker:
             pass
         if cleared:
             self._notify(f"대기 중 작업 {cleared}개를 비웠습니다.")
+
+    def _alert_not_ready(self):
+        # 우선 pyautogui.alert (pg.alert) 시도, 안 되면 Tk messagebox로 폴백
+        try:
+            pg.alert("밴드 로그인이 완료되지 않았습니다. 밴드 로그인을 먼저 완료 해주세요", "알림")
+        except Exception:
+            try:
+                from tkinter import messagebox
+                messagebox.showwarning("알림", "브라우저 준비 중입니다.\n초기화가 끝난 뒤 다시 시도하세요.")
+            except Exception:
+                # 마지막 폴백: 콘솔
+                print("[알림] 브라우저 준비 중입니다. 초기화가 끝난 뒤 다시 시도하세요.")
