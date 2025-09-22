@@ -296,6 +296,9 @@ def goScript(getDict):
                     sd.Beep(fr, du)
                 continue
 
+
+            # 글쓰기 부분!!!!!!!!!!!!!!!!!!!!!!!!!
+
             # 여기에 챗GPT 로 글 가져오는거 하기!!!!
 
             ex_subject = blogEx.cell(exCount,3).value
@@ -441,7 +444,13 @@ def goScript(getDict):
                 if writeRes['status']:
                     break
             
+
+            # 글 작성 끄읕~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!!
+
+
             print('글 작성은 끝났니?!?!??!')
+
+            
 
             # 블로그 메인으로 이동
             while True:
@@ -465,7 +474,7 @@ def goScript(getDict):
 
                 try:
                     wait_float(1.2,1.9)
-                    blogMainChk = driver.find_elements(by=By.CSS_SELECTOR, value=".icon_logo_blog__j_hyw")
+                    blogMainChk = driver.find_elements(by=By.CSS_SELECTOR, value=".lottie_logo__CzKBx")
                     if len(blogMainChk) > 0:
                         break
                 except:
@@ -486,7 +495,7 @@ def goScript(getDict):
             blogListNum = 0
             try:
                 # 이웃블로그 갯수 찾기
-                blogList = driver.find_elements(by=By.CSS_SELECTOR, value=".thumb__Fu6lY")
+                blogList = driver.find_elements(by=By.CSS_SELECTOR, value=".title__mA4zy")
                 blogListNum = len(blogList)
             except:
                 pass
@@ -506,7 +515,7 @@ def goScript(getDict):
                             pass
                         try:
                             wait_float(1.2,1.9)
-                            blogList = driver.find_elements(by=By.CSS_SELECTOR, value=".thumb__Fu6lY")
+                            blogList = driver.find_elements(by=By.CSS_SELECTOR, value=".title__mA4zy")
                             if len(blogList) > 0:
                                 randomBlogNum = random.randint(0, len(blogList))
                                 blogList[randomBlogNum].click()

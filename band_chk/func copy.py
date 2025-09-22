@@ -641,7 +641,7 @@ def band_join_loop(driver, cancel_event, stop_event):
                 pass
 
         
-        bandEx.cell(bandCount,4).value = 'ok'
+        bandEx.cell(bandCount,3).value = 'ok'
         bandWb.save('./etc/band_work.xlsx')
     
                         
