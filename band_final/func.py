@@ -473,6 +473,10 @@ def joinband(driver, profile, bandStatus):
                     bandStatus['status'] = False
                     bandStatus['message'] = '인증 후 가입 가능'
                     break
+                elif '제한' in headingMsg.text:
+                    bandStatus['status'] = False
+                    bandStatus['message'] = '밴드 가입 제한'
+                    break
                 elif '초과' in headingMsg.text:
                     bandStatus['status'] = False
                     bandStatus['message'] = '멤버수 초과'
@@ -607,6 +611,16 @@ def naverLogin(driver, id, pwd):
             print(e)
             pass
 
+        # 바로 로그인 종류 선택 페이지로 넘어가는경우 break
+        try:
+            keepLoggedChk = driver.find_elements(by=By.CSS_SELECTOR, value=".uCheckbox span")
+            if len(keepLoggedChk) > 0:
+                break
+        except Exception as e:
+            print(e)
+            pass
+
+        # 바로 밴드 메인으로 가는경우 return
         try:
             logginedChk = driver.find_elements(by=By.CSS_SELECTOR, value=".inputBandSearch")
             if len(logginedChk) > 0:
@@ -614,6 +628,8 @@ def naverLogin(driver, id, pwd):
         except Exception as e:
             print(e)
             pass
+
+        
 
         
 

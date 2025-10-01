@@ -45,6 +45,7 @@ def goScript():
         id = idEx.cell(idCount,1).value
         pwd = idEx.cell(idCount,2).value
         profile = idEx.cell(idCount,3).value
+        onlyJoin = idEx.cell(idCount,5).value
         if id is None:
             pg.alert('작업 완료! 종료합니다.')
             sys.exit(1)
@@ -71,8 +72,8 @@ def goScript():
         # 로그인 완료 되었으면 2시간동안 밴드 돌기!!
 
         start_time = datetime.now()
-        # limit = timedelta(hours=1, minutes=50)  # 1시간 50분
-        limit = timedelta(hours=1)
+        limit = timedelta(hours=1, minutes=50)  # 1시간 50분
+        # limit = timedelta(hours=1)
         while True:
 
             bandCount += 1
@@ -113,10 +114,19 @@ def goScript():
                     baneEx.cell(bandCount,2).value = bandStatus['message']
                     bandWb.save('./etc/band_list.xlsx')
                     continue
+                elif onlyJoin is not None:
+                    bandCount = 1
+                    idEx.cell(idCount,4).value = 'ok'
+                    idWb.save('./etc/id_list.xlsx')
+                    driver.quit()
+                    break
                 else:
                     # 더이상 밴드 가입이 안됨! bandCount 초기화 해서 다시 시작!!
                     bandCount = 1
                     continue
+
+            if onlyJoin is not None:
+                continue
 
             try:
                 pg.moveTo(650, 160, duration=0.2)

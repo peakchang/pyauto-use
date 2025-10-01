@@ -59,28 +59,58 @@ keywords = [
 ]
 
 
-def create_active_array(lengthArr, innerArr, num_realworks=1):
+def create_active_array(lengthArr, innerArr):
+    # 배열의 길이는 랜덤한 값을 사용
     length = random.randint(lengthArr[0], lengthArr[1])
+    
+    # 기본적으로 모두 'notWork'로 채운다
     array = ['notWork'] * length
+    
+    # 첫 번째와 마지막 요소는 'notWork'로 유지
     array[0] = 'notWork'
     array[-1] = 'notWork'
     
+    # 'work'의 개수를 랜덤으로 결정
+    num_of_works = random.randint(innerArr[0], innerArr[1])
+    
+    # 첫 번째와 마지막 요소를 제외한 인덱스 리스트
     available_positions = list(range(1, length - 1))
     
-    # 뽑을 수 있는 개수보다 크게 안 뽑게 보정
-    num_of_works = min(random.randint(innerArr[0], innerArr[1]), len(available_positions))
-    
+    # 무작위로 num_of_works개의 위치를 선택하여 'work'로 설정
     work_positions = random.sample(available_positions, num_of_works)
+    
     for pos in work_positions:
         array[pos] = 'work'
     
-    if work_positions:
-        num_realworks = min(num_realworks, len(work_positions))
-        realwork_positions = random.sample(work_positions, num_realworks)
-        for pos in realwork_positions:
-            array[pos] = 'realwork'
+    # 'work' 위치 중 하나를 선택하여 'realwork'로 변경
+    if work_positions:  # work_positions가 비어 있지 않은지 확인
+        realwork_position = random.choice(work_positions)
+        array[realwork_position] = 'realwork'
     
     return array
+
+# def create_active_array(lengthArr, innerArr, num_realworks=1):
+#     length = random.randint(lengthArr[0], lengthArr[1])
+#     array = ['notWork'] * length
+#     array[0] = 'notWork'
+#     array[-1] = 'notWork'
+    
+#     available_positions = list(range(1, length - 1))
+    
+#     # 뽑을 수 있는 개수보다 크게 안 뽑게 보정
+#     num_of_works = min(random.randint(innerArr[0], innerArr[1]), len(available_positions))
+    
+#     work_positions = random.sample(available_positions, num_of_works)
+#     for pos in work_positions:
+#         array[pos] = 'work'
+    
+#     if work_positions:
+#         num_realworks = min(num_realworks, len(work_positions))
+#         realwork_positions = random.sample(work_positions, num_realworks)
+#         for pos in realwork_positions:
+#             array[pos] = 'realwork'
+    
+#     return array
 
 def changeIp():
     try:
@@ -165,6 +195,13 @@ def active_chrome(driver):
 
 # PC 버전 함수들!!!!!
 def searchPcAnotherList(driver, workCount, test = None, subject = ""):
+
+    exKeywords = [
+        "요리", "맛집", "생생", "한우", "모임",
+        "일식", "양식", "한식", "고깃", "고기",
+        "구이", "족발", "장어", "레스토랑"
+    ]
+
     errCount = 0
     onotherListStatus = True
     while True:
@@ -179,29 +216,44 @@ def searchPcAnotherList(driver, workCount, test = None, subject = ""):
         print('타겟 외 클릭할 리스트 뽑기')
         wait_float(1.2,1.9)
 
-        try:
-            w1 = driver.find_elements(by=By.CSS_SELECTOR, value=".title_link")
-        except:
-            print('인기글 찾기 에러~')
-            pass
-        try:
-            w2 = driver.find_elements(by=By.CSS_SELECTOR, value=".link_question")
-        except:
-            print('지식인 리스트 찾기 에러~')
-            pass
-        try:
-            w3 = driver.find_elements(by=By.CSS_SELECTOR, value=".news_tit")
-        except:
-            print('뉴스글 찾기 에러~')
-            pass
+        # api_subject_bx 는 PC 버전의 큰 박스
+        # 큰 박스를 먼저 찾음
+        while True:
+            try:
+                sections = driver.find_elements(by=By.CSS_SELECTOR, value=".api_subject_bx")
+                if len(sections) > 0:
+                    break
+            except:
+                pass
+            
+        onotherList = []  # [(text, WebElement), ...] 형태로 저장
+        for sec in sections:
+            # 1) 섹션 안에 fds-web-root 가 있으면 제외 (웹문서 영역)
+            if sec.find_elements(By.CSS_SELECTOR, ".fds-web-root"):
+                continue
 
-        try:
-            w4 = driver.find_elements(by=By.CSS_SELECTOR, value=".fds-comps-right-image-text-content")
-        except:
-            print('기타 view 탭 컨텐츠 찾기 에러~')
-            pass
+            # 2) 없으면 타이틀 후보들 수집
+            elems = sec.find_elements(
+                By.CSS_SELECTOR,
+                ".fds-comps-right-image-text-title, .sds-comps-text-type-headline1"
+            )
 
-        onotherList = w1 + w2 + w3 + w4
+
+            keywords = ["더보기", "찾는", "콘텐츠", "인기글", "지식", "동영상"]
+            for el in elems:
+                addStatus = True
+                for keyword in keywords:
+                    if keyword in el.text:
+                        addStatus = False
+                    
+                if addStatus == True:
+                    onotherList.append(el)
+
+        for data in onotherList:
+            print(data.text)
+
+
+
         if len(onotherList) > 0:
             break
     print('타겟 외 클릭할 리스트 뽑기 완료!!')
@@ -394,7 +446,7 @@ def searchPcContent(driver, workInfo, workType, test = None):
 # 모바일 버전 함수들!!!!!!!!!!!!!!
 def searchMobileAnotherList(driver, workCount, test = None, subject = ""):
 
-    keywords = [
+    exKeywords = [
         "요리", "맛집", "생생", "한우", "모임",
         "일식", "양식", "한식", "고깃", "고기",
         "구이", "족발", "장어", "레스토랑"
@@ -414,36 +466,71 @@ def searchMobileAnotherList(driver, workCount, test = None, subject = ""):
         print('타겟 외 클릭할 리스트 뽑기')
         wait_float(1.2,1.9)
 
-        try:
-            w1 = driver.find_elements(by=By.CSS_SELECTOR, value=".title_link")
-        except:
-            print('viewtabList 찾기 에러~')
-            pass
-        try:
-            w2 = driver.find_elements(by=By.CSS_SELECTOR, value=".fds-comps-right-image-text-title")
-        except:
-            print('viewtabList 찾기 에러~')
-            pass
-        try:
-            w3 = driver.find_elements(by=By.CSS_SELECTOR, value=".question_text")
-        except:
-            print('viewtabList 찾기 에러~')
-            pass
 
-        try:
-            w4Temps = driver.find_elements(by=By.CSS_SELECTOR, value=".tit_area")
-            w4 = [
-                el for el in w4Temps
-                if not any(word in el.text for word in keywords)
-            ]
-        except:
-            print('viewtabList 찾기 에러~')
-            pass
+        while True:
+            try:
+                sections = driver.find_elements(by=By.CSS_SELECTOR, value=".fds-default-mode")
+                if len(sections) > 0:
+                    break
+            except:
+                pass
+            
+        onotherList = []  # [(text, WebElement), ...] 형태로 저장
+        for sec in sections:
+            # 1) 섹션 안에 fds-web-root 가 있으면 제외
+            if sec.find_elements(By.CSS_SELECTOR, ".fds-web-root"):
+                continue
 
-        print('------------ w4 체크체크!!!')
-        print(w4)
+            # 2) 없으면 타이틀 후보들 수집
+            elems = sec.find_elements(
+                By.CSS_SELECTOR,
+                ".fds-comps-right-image-text-title, .sds-comps-text-type-headline1"
+            )
+
+
+            keywords = ["더보기", "찾는", "콘텐츠", "인기글", "지식", "동영상"]
+            for el in elems:
+                addStatus = True
+                for keyword in keywords:
+                    if keyword in el.text:
+                        addStatus = False
+                    
+                if addStatus == True:
+                    onotherList.append(el)
+
+        for data in onotherList:
+            print(data.text)
+
+        # try:
+        #     w1 = driver.find_elements(by=By.CSS_SELECTOR, value=".title_link")
+        # except:
+        #     print('viewtabList 찾기 에러~')
+        #     pass
+        # try:
+        #     w2 = driver.find_elements(by=By.CSS_SELECTOR, value=".fds-comps-right-image-text-title")
+        # except:
+        #     print('viewtabList 찾기 에러~')
+        #     pass
+        # try:
+        #     w3 = driver.find_elements(by=By.CSS_SELECTOR, value=".question_text")
+        # except:
+        #     print('viewtabList 찾기 에러~')
+        #     pass
+
+        # try:
+        #     w4Temps = driver.find_elements(by=By.CSS_SELECTOR, value=".tit_area")
+        #     w4 = [
+        #         el for el in w4Temps
+        #         if not any(word in el.text for word in keywords)
+        #     ]
+        # except:
+        #     print('viewtabList 찾기 에러~')
+        #     pass
+
+        # print('------------ w4 체크체크!!!')
+        # print(w4)
         
-        onotherList = w1 + w2 + w3 + w4
+        # onotherList = w1 + w2 + w3 + w4
         if len(onotherList) > 0:
             break
     print('타겟 외 클릭할 리스트 뽑기 완료!!')
@@ -517,6 +604,8 @@ def searchMobileAnotherList(driver, workCount, test = None, subject = ""):
                 while True:
                     print('여기서 도는거 같은데?!?!?!')
                     previousErrCount += 1
+                    if previousErrCount > 15:
+                        return False
                     wait_float(1.2,1.9)
                     try:
                         script = """
@@ -573,6 +662,7 @@ def searchMobileAnotherList(driver, workCount, test = None, subject = ""):
                         if previousErrCount > 5:
                             previousErrCount = 0
                             driver.forward()
+                            driver.forward()
                         print(str(e))
                         print('뒤로가기 후 검색창 있는곳에 도달 못하는 에러!!')
                         pass
@@ -615,6 +705,8 @@ def searchMobileContent(driver, workInfo, workType, test = None):
             break
         wait_float(0.5,1.2)
         targetWork = searchContentInnerWork(driver, workInfo, workType, test)
+
+        print(targetWork)
 
         print('메인 targetWork 체크!!!')
 
@@ -920,8 +1012,12 @@ def naverMainSearch(driver, searchTxt, workDevice):
                 # print(str(e))
                 pass
 
+
+# 웹문서 영역 찾기!!!
 def searchContentInnerWork(driver, workInfo, workType, test, pgn = 1):
 
+    print(workInfo)
+    print(workType)
     targetWork = {}
 
     targetWork['status'] = False
@@ -929,20 +1025,28 @@ def searchContentInnerWork(driver, workInfo, workType, test, pgn = 1):
     targetWork['rate'] = 0
 
     try:
-        targetList = driver.find_elements(by=By.CSS_SELECTOR, value=".sds-comps-text.sds-comps-text-ellipsis.sds-comps-text-ellipsis-2.sds-comps-text-type-headline1.sds-comps-text-weight-sm")
-
-        print(targetList)
-
+        targetList = driver.find_elements(by=By.CSS_SELECTOR, value=".fds-web-list-root .sds-comps-text-type-headline1")
         actTarget = ""
+        
+        print(targetList)
+        getHref = ""
+        st_link = ""
         for idx, target in enumerate(targetList):
 
-            getAtag = target.find_element(by=By.CSS_SELECTOR, value="a")
-            getHref = getAtag.get_attribute('href')
-            st_link = str(workInfo['st_link']).strip()
-            getHref = getHref.strip()
+            try:
+                if workType['pr_work_type'] == 'pc':
+                    getAtag = target.find_element(By.XPATH, "./ancestor::a[1]")
+                else:
+                    getAtag = target.find_element(by=By.CSS_SELECTOR, value="a")
+                getHref = getAtag.get_attribute('href')
+                st_link = str(workInfo['st_link']).strip()
+                getHref = getHref.strip()
+            except:
+                pass
 
             print(st_link)
             print(getHref)
+            
             print('--------------------------------')
 
             wait_float(0.1,0.3)
@@ -1059,7 +1163,6 @@ def searchContentInnerWork(driver, workInfo, workType, test, pgn = 1):
                     driver.switch_to.window(driver.window_handles[0])
 
             # 여기서 작업 하고 targetWorkStatus True로 변경
-        
 
         print(f"targetWorkStatus : {targetWork}")
 

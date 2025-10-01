@@ -4,8 +4,8 @@ def trfficScript(getDict):
 
 
     workType = {}
-    # testWork = 'ok'
-    testWork = None
+    testWork = 'ok'
+    # testWork = None
 
     # siteLink = "http://localhost:3020"
     siteLink = "https://happy-toad2.shop"
@@ -177,8 +177,10 @@ def trfficScript(getDict):
             try:
                 activeArrLengthArr = [6,7]
                 activeArrInnerArr = [3,4]
-                workArr = create_active_array(activeArrLengthArr, activeArrInnerArr, 3)
-            except:
+                # workArr = create_active_array(activeArrLengthArr, activeArrInnerArr, 3)
+                workArr = create_active_array(activeArrLengthArr, activeArrInnerArr)
+            except Exception as e:
+                print(str(e))
                 pg.alert('알수없는 오류!!')
                 sys.exit(1)
 
@@ -188,7 +190,7 @@ def trfficScript(getDict):
             if testWork == 'ok':
                 # workArr = ['notwork','realwork','work','realwork','work','notwork']
                 # workArr = ['work', 'realwork']
-                # workArr = ['realwork', 'work']
+                workArr = ['realwork', 'work']
                 pass
             # 작업할 배열을 생성! workArr 은 'notWork'
             for work in workArr:
@@ -218,10 +220,15 @@ def trfficScript(getDict):
                     naverMainSearch(driver, workInfo['pk_content'], workType['pr_work_type'])
                     wait_float(1.2,1.9)
 
+                    onotherWorkNum = random.randint(1, 2)
                     if workType['pr_work_type'] == 'mobile':
-                        searchMobileAnotherList(driver, 1, testWork, workInfo['pk_content'])
+                        searchStatus = searchMobileAnotherList(driver, onotherWorkNum, testWork, workInfo['pk_content'])
                     else:
-                        searchPcAnotherList(driver, 1, testWork, workInfo['pk_content'])
+                        searchStatus = searchPcAnotherList(driver, onotherWorkNum, testWork, workInfo['pk_content'])
+
+                    
+                    if searchStatus == False:
+                        break
 
                 elif work == 'work':
                     # 먼저 작업 내용 불러오기!! clickStatus 가 false 인거 아무거나 하나 불러오기!!
@@ -259,10 +266,15 @@ def trfficScript(getDict):
                     naverMainSearch(driver, workInfo['st_subject'], workType['pr_work_type'])
 
                     # 먼저 아무거나 클릭 하나!!!
+                    onotherWorkNum = random.randint(1, 2)
                     if workType['pr_work_type'] == 'mobile':
-                        searchMobileAnotherList(driver, 1, testWork)
+                        searchStatus = searchMobileAnotherList(driver, onotherWorkNum, testWork)
                     else:
-                        searchPcAnotherList(driver, 1, testWork)
+                        searchStatus = searchPcAnotherList(driver, onotherWorkNum, testWork)
+
+                    
+                    if searchStatus == False:
+                        break
 
 
                     
@@ -322,10 +334,14 @@ def trfficScript(getDict):
 
                     # 모바일은 나중에~~~~ 안할 가능성도 크고~~~~
                     # 먼저 아무거나 클릭 하나!!!
+                    onotherWorkNum = random.randint(1, 2)
                     if workType['pr_work_type'] == 'mobile':
-                        searchMobileAnotherList(driver, 1, testWork)
+                        searchStatus = searchMobileAnotherList(driver, onotherWorkNum, testWork)
                     else:
-                        searchPcAnotherList(driver, 1, testWork)
+                        searchStatus = searchPcAnotherList(driver, onotherWorkNum, testWork)
+                    
+                    if searchStatus == False:
+                        break
 
 
                     # 본 조회 작업 GOGO!!!
@@ -336,6 +352,9 @@ def trfficScript(getDict):
                         targetWork = searchMobileContent(driver ,workInfo ,workType ,testWork)
                     else:
                         targetWork = searchPcContent(driver ,workInfo ,workType ,testWork)
+
+                    
+                    print(targetWork)
                     while True:
                         wait_float(0.3,0.9)
                         # chkRateStatus 는 st_use가 FALSE 인 값을 찾아서 한것이므로 TRUE로 업데이트!!
