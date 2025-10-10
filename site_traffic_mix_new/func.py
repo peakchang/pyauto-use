@@ -59,58 +59,58 @@ keywords = [
 ]
 
 
-def create_active_array(lengthArr, innerArr):
-    # 배열의 길이는 랜덤한 값을 사용
-    length = random.randint(lengthArr[0], lengthArr[1])
-    
-    # 기본적으로 모두 'notWork'로 채운다
-    array = ['notWork'] * length
-    
-    # 첫 번째와 마지막 요소는 'notWork'로 유지
-    array[0] = 'notWork'
-    array[-1] = 'notWork'
-    
-    # 'work'의 개수를 랜덤으로 결정
-    num_of_works = random.randint(innerArr[0], innerArr[1])
-    
-    # 첫 번째와 마지막 요소를 제외한 인덱스 리스트
-    available_positions = list(range(1, length - 1))
-    
-    # 무작위로 num_of_works개의 위치를 선택하여 'work'로 설정
-    work_positions = random.sample(available_positions, num_of_works)
-    
-    for pos in work_positions:
-        array[pos] = 'work'
-    
-    # 'work' 위치 중 하나를 선택하여 'realwork'로 변경
-    if work_positions:  # work_positions가 비어 있지 않은지 확인
-        realwork_position = random.choice(work_positions)
-        array[realwork_position] = 'realwork'
-    
-    return array
-
-# def create_active_array(lengthArr, innerArr, num_realworks=1):
+# def create_active_array(lengthArr, innerArr):
+#     # 배열의 길이는 랜덤한 값을 사용
 #     length = random.randint(lengthArr[0], lengthArr[1])
+    
+#     # 기본적으로 모두 'notWork'로 채운다
 #     array = ['notWork'] * length
+    
+#     # 첫 번째와 마지막 요소는 'notWork'로 유지
 #     array[0] = 'notWork'
 #     array[-1] = 'notWork'
     
+#     # 'work'의 개수를 랜덤으로 결정
+#     num_of_works = random.randint(innerArr[0], innerArr[1])
+    
+#     # 첫 번째와 마지막 요소를 제외한 인덱스 리스트
 #     available_positions = list(range(1, length - 1))
     
-#     # 뽑을 수 있는 개수보다 크게 안 뽑게 보정
-#     num_of_works = min(random.randint(innerArr[0], innerArr[1]), len(available_positions))
-    
+#     # 무작위로 num_of_works개의 위치를 선택하여 'work'로 설정
 #     work_positions = random.sample(available_positions, num_of_works)
+    
 #     for pos in work_positions:
 #         array[pos] = 'work'
     
-#     if work_positions:
-#         num_realworks = min(num_realworks, len(work_positions))
-#         realwork_positions = random.sample(work_positions, num_realworks)
-#         for pos in realwork_positions:
-#             array[pos] = 'realwork'
+#     # 'work' 위치 중 하나를 선택하여 'realwork'로 변경
+#     if work_positions:  # work_positions가 비어 있지 않은지 확인
+#         realwork_position = random.choice(work_positions)
+#         array[realwork_position] = 'realwork'
     
 #     return array
+
+def create_active_array(lengthArr, innerArr, num_realworks=1):
+    length = random.randint(lengthArr[0], lengthArr[1])
+    array = ['notWork'] * length
+    array[0] = 'notWork'
+    array[-1] = 'notWork'
+    
+    available_positions = list(range(1, length - 1))
+    
+    # 뽑을 수 있는 개수보다 크게 안 뽑게 보정
+    num_of_works = min(random.randint(innerArr[0], innerArr[1]), len(available_positions))
+    
+    work_positions = random.sample(available_positions, num_of_works)
+    for pos in work_positions:
+        array[pos] = 'work'
+    
+    if work_positions:
+        num_realworks = min(num_realworks, len(work_positions))
+        realwork_positions = random.sample(work_positions, num_realworks)
+        for pos in realwork_positions:
+            array[pos] = 'realwork'
+    
+    return array
 
 def changeIp():
     try:
@@ -1107,6 +1107,7 @@ def searchContentInnerWork(driver, workInfo, workType, test, pgn = 1):
                 # 내리면서 스크롤 하기
                 scrollRanVal = random.randrange(8, 15)
                 for k in range(scrollRanVal):
+                    print('스크롤 중~~~')
                     pg.moveTo(300,400)
                     pg.scroll(-150)
                     if test == 'ok':
@@ -1158,8 +1159,10 @@ def searchContentInnerWork(driver, workInfo, workType, test, pgn = 1):
                 #         if innerLinkWorkStatus:
                 #             break
                 if workType['pr_work_type'] == 'mobile':
+                    print('검색창 있는곳으로 돌아가기!!')
                     goBackToMobileSearchTab(driver)
                 else:
+                    print('첫번째 창으로 돌아가기')
                     driver.switch_to.window(driver.window_handles[0])
 
             # 여기서 작업 하고 targetWorkStatus True로 변경

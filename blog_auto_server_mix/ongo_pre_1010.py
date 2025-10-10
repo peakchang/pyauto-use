@@ -37,16 +37,17 @@ def goScript(getDict):
 
     # ----------------------------------- 여기부터 잠깐만!!!!!
 
-    allExCount = 1
+    exCount = 1
 
     # 먼저 전체 갯수 가져오기
     while True:
-        allExCount += 1
-        if blogEx.cell(allExCount,1).value is None:
+        exCount += 1
+        if blogEx.cell(exCount,4).value is None:
             break
 
-    allExCount = allExCount - 2 # 맨 위에 제목 빼고, 마지막 빈칸 빼고
-    print(allExCount)
+
+    exCount = exCount - 1
+    pg.alert(f'{exCount} 번째 부터 시작합니다!')
 
 
     startCount = 0
@@ -85,51 +86,25 @@ def goScript(getDict):
             else:
                 newsWork = not newsWork
 
-            startCount += 1 # 시작 카운트가 1이면 대기를 안하기 위해서 + 5회 작업시마다 10분씩 휴식!!
-            if (startCount - 1) % 5 == 0 and startCount != 1:
-                print(f"🔥 {startCount}는 5의 배수 + 1 입니다!")
-                print("8:30~10분 대기!!!")
-                wait_float(510.0,600.0)
-
+            startCount += 1
 
             if newsWork == False:
+                exCount += 1
+            workBlogNum = blogEx.cell(exCount,1).value
 
-                chkExCount = 1
-                chkExArr = []
-                while True:
-                    chkExCount += 1
-                    if blogEx.cell(chkExCount,4).value is None:
-                        chkExArr.append(chkExCount)
-                    if chkExCount > allExCount:
-                        break
-
-                print(chkExArr)
-
-            
-            if chkExArr == []:
-                print('더이상 작업할 아이디가 없어요!!!')
+            print(exCount)
+            print(workBlogNum)
+            if workBlogNum is None:
                 for i in range(4):
                     fr = 1550    # range : 37 ~ 32767
                     du = 300     # 1000 ms ==1second
                     sd.Beep(fr, du)
                 break
-            else:
-                exCount = random.choice(chkExArr)
-                workBlogNum = blogEx.cell(exCount,1).value
-                print(exCount)
-                print(workBlogNum)
-                
-                if workBlogNum is None:
-                    for i in range(4):
-                        fr = 1550    # range : 37 ~ 32767
-                        du = 300     # 1000 ms ==1second
-                        sd.Beep(fr, du)
-                    break
 
-                # 텀 30~40 하니까 아이디가 계속 죽네;;; 10초씩 늘려봄!
-                elif startCount != 1 and testWork == False:
-                    print("1분~1분 10초 대기!!!")
-                    wait_float(60.0,70.5)
+            # 텀 30~40 하니까 아이디가 계속 죽네;;; 10초씩 늘려봄!
+            elif startCount != 1 and testWork == False:
+                print("1분~1분 10초 대기!!!")
+                wait_float(60.0,70.5)
 
             if newsWork == True:
                 print('지금은 newsWork!!!!!!!!!!!!')

@@ -10,6 +10,7 @@ import math
 # from pyparsing import And
 import requests
 import urllib.request
+from urllib.parse import urlparse
 # from bs4 import BeautifulSoup as bs
 import json
 import re
@@ -30,6 +31,8 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.service import Service as ChromeService
 # from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.alert import Alert
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoAlertPresentException
 import clipboard as cb
 import random
@@ -37,6 +40,13 @@ import pygetwindow as gw
 from pywinauto import Desktop
 import pyperclip
 
+
+def extract_domain(url: str) -> str:
+    parsed = urlparse(url)
+    domain = parsed.netloc or parsed.path  # netloc이 없으면 path 사용
+    # www. 제거
+    domain = domain.replace("www.", "")
+    return domain
 
 def getNewsContent(siteLink, client_id, client_secret, keyword = "이슈"):
 

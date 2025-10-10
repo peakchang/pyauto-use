@@ -53,9 +53,11 @@ def goScript(getDict):
                     print(f"API 받아오기 완료! 정보는? {getInfo}")
 
                     if getInfo['status'] == True:
+                        print('이제 break 해야지!!')
                         break
                 except Exception as e:
                     print(str(e))
+            print('API 정보 받고 나왔따!!!')
         else:
             while True:
                 try:
@@ -70,6 +72,8 @@ def goScript(getDict):
 
 
         workInfo = getInfo['get_work']
+
+        print(f"작업 정보 : {workInfo}")
 
 
         # 접속을 먼저 한 다음에 글쓰기가 가능한 상태인지 체크하기!!!!!
@@ -87,10 +91,13 @@ def goScript(getDict):
 
         cookieStatus = False
         for i in range(5):
+            print(f"쿠키 시도 {i} 번째")
             try:
                 res = session.post(login_url, data=payload, verify=False)
+                print(1)
                 print(res)
                 cookies = session.cookies.get_dict()
+                print(2)
                 print("cookies : ", cookies)
                 cookieStatus = True
                 break
@@ -119,8 +126,7 @@ def goScript(getDict):
         except:
             driver.quit()
             continue
-        
-        pg.alert('잠만?!')
+
         try:
             # Step 3: 쿠키 삽입
             for name, value in cookies.items():
@@ -146,9 +152,11 @@ def goScript(getDict):
             driver.quit()
             continue
 
+        print('글쓰기 페이지 들어옴!!!')
+
         try:
-            alert = Alert(driver)
-            # alert 창이 있으면 사이트 짤린거! 짤림 체크!!
+            WebDriverWait(driver, 2).until(EC.alert_is_present())
+            alert = driver.switch_to.alert
             if alert:
                 alert.accept()
 
@@ -163,13 +171,18 @@ def goScript(getDict):
                 driver.quit()
                 continue
 
-        except NoAlertPresentException:
+        except Exception as e:
+            print('에러가 다긴 나는거지?!')
             print("✅ Alert 창 없음")
 
         current_url = driver.current_url
+        chkDomain = extract_domain(domain)
+
+        print(f"현재 URL : {current_url}")
+        print(f"도메인 : {domain}")
         
         # 주소창에 도메인이 없으면 허용 접속량이 초과된 상태!!
-        if domain not in current_url:
+        if chkDomain not in current_url:
             while True:
                 try:
                     getStatus = requests.post(f"{siteLink}/api/v7/res/update_faulty_site", {"bl_id" : workInfo["bl_id"], "value" : "problem", "message" : "접속량 초과! 추가 확인!"}).json()
@@ -203,25 +216,47 @@ def goScript(getDict):
                     print(str(e))
             continue
 
+        # 타이틀 값 넣어주기!!
         while True:
             driverTitle = driver.title
             if driverTitle != "":
                 break
 
+        # 다 완료 되었는데 캡챠가 있으면 로그인 불가한 비 정상 사이트로 간주 continue!!
+        try:
+            captcha_key = driver.find_elements(by=By.CSS_SELECTOR, value="#captcha_key")
+            if len(captcha_key) > 0:
+                print('캡챠가 있음!! 비정상 사이트 처리!!!')
+                while True:
+                    try:
+                        getStatus = requests.post(f"{siteLink}/api/v7/res/update_faulty_site", {"bl_id" : workInfo["bl_id"], "value" : "false", "message" : "로그인 불가!"}).json()
+                        if getStatus['status'] == True:
+                            break
+                    except Exception as e:
+                        print(str(e))
+                driver.quit()
+                continue
+        except:
+            pass
+
 
         # 타겟 링크 구하기 GOGO!!
         targetList = ''
         while True:
+            
             try:
                 wait_float(0.3,0.5)
                 targetInfoRes = requests.get(f"{siteLink}/api/v7/res/get_target_data").json()
                 print(f"API 받아오기 완료! 정보는? {targetInfoRes}")
 
                 if targetInfoRes['status'] == True:
+                    print('이제 break 해야지!!')
                     break
             except Exception as e:
                 print(str(e))
-        
+                pass
+
+        print('나왔어!!')
         # 타겟 링크 A태그 2개 배열로 변환!!
         targetList = targetInfoRes['target_list']
         linkList = []
@@ -232,6 +267,7 @@ def goScript(getDict):
         # 글 따기 작업 GOGO!!!
         article = ""
         while True:
+            print('글 따기 중.....')
             while True:
                 wait_float(0.5,0.9)
                 newsTopicList = ["뉴스", "이슈", "갤럭시", "애플", "삼성", "아이폰", "농구", "축구", "야구", "연예", "드라마"]
@@ -450,6 +486,15 @@ def goScript(getDict):
                 print('에러 무리하고 다음거!')
                 break
             print('여기 도는거지?!??!!')
+
+
+            try:
+                submitBtns = driver.find_elements(by=By.CSS_SELECTOR, value="#btn_submit")
+                print(submitBtns)
+                print(len(submitBtns))
+            except:
+                pass
+
             
             try:
                 wait_float(0.5,0.9)
@@ -462,19 +507,24 @@ def goScript(getDict):
 
 
             try:
-                alert = Alert(driver)
+                WebDriverWait(driver, 2).until(EC.alert_is_present())
+                alert = driver.switch_to.alert
                 if alert:
+                    print('alert 있어?!')
                     alert.accept
                     break
             except:
+                print("✅ Alert 창 없음")
                 pass
 
             current_url = driver.current_url
+            print(current_url)
 
             if "write" not in current_url:
+                wait_float(1.5,2.2)
                 break
             pg.moveTo(400,500)
-            pg.scroll(-50)
+            pg.scroll(-100)
 
         if getDict['test_val']:
             pg.alert('글 작성 완료 체크 확인!!')
@@ -496,10 +546,13 @@ def goScript(getDict):
             except:
                 pass
 
+        # #bo_v_con // #bo_v_atc
         while True:
             try:
                 getStatus = requests.post(f"{siteLink}/api/v7/res/update_last_backlink_work", {"pc_id" : pc_id}).json()
                 if getStatus['status'] == True:
+                    if getDict['test_val']:
+                        pg.alert('최종 업데이트 체크!!')
                     break
             except Exception as e:
                 print(str(e))

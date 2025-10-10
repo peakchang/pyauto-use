@@ -2,10 +2,10 @@ from func import *
 
 def trfficScript(getDict):
 
-
+    
     workType = {}
-    testWork = 'ok'
-    # testWork = None
+    # testWork = 'ok'
+    testWork = None
 
     # siteLink = "http://localhost:3020"
     siteLink = "https://happy-toad2.shop"
@@ -96,13 +96,30 @@ def trfficScript(getDict):
                         options.add_argument("--disable-backgrounding-occluded-windows")
                         options.add_argument("--disable-renderer-backgrounding")
                         options.add_argument("--disable-features=TranslateUI")
+
+                        # PDH 에러 방지를 위한 추가 옵션
+                        options.add_argument("--disable-dev-shm-usage")  # 공유 메모리 사용 안함
+                        options.add_argument("--no-sandbox")  # 샌드박스 비활성화
+                        options.add_argument("--disable-gpu")  # GPU 가속 비활성화
+                        options.add_argument("--disable-software-rasterizer")
+                        
+                        # 성능 모니터링 비활성화 (PDH 관련)
+                        options.add_argument("--disable-background-networking")
+                        options.add_argument("--metrics-recording-only")
+                        options.add_argument("--disable-background-timer-throttling")
                         
                         # 쿠키 및 세션 완전 초기화
                         options.add_argument("--disable-background-networking")
                         options.add_argument("--disable-sync")
 
-
+                        # 브라우저가 자동화된 테스트 소프트웨어에 의해 제어되고 있음을 감추기 위한 옵션
                         options.add_experimental_option("excludeSwitches", ["enable-automation"])
+
+                        # 로그 레벨 설정으로 불필요한 시스템 호출 줄이기
+                        options.add_experimental_option('excludeSwitches', ['enable-logging'])
+
+
+
                         driver = webdriver.Chrome(options=options)
                         driver.get('https://www.naver.com')
                         driver.set_page_load_timeout(12)
@@ -136,6 +153,18 @@ def trfficScript(getDict):
                                 options.add_argument("--disable-backgrounding-occluded-windows")
                                 options.add_argument("--disable-renderer-backgrounding")
                                 options.add_argument("--disable-features=TranslateUI")
+
+
+                                # PDH 에러 방지를 위한 추가 옵션
+                                options.add_argument("--disable-dev-shm-usage")  # 공유 메모리 사용 안함
+                                options.add_argument("--no-sandbox")  # 샌드박스 비활성화
+                                options.add_argument("--disable-gpu")  # GPU 가속 비활성화
+                                options.add_argument("--disable-software-rasterizer")
+                                
+                                # 성능 모니터링 비활성화 (PDH 관련)
+                                options.add_argument("--disable-background-networking")
+                                options.add_argument("--metrics-recording-only")
+                                options.add_argument("--disable-background-timer-throttling")
                                 
                                 # 쿠키 및 세션 완전 초기화
                                 options.add_argument("--disable-background-networking")
@@ -175,10 +204,15 @@ def trfficScript(getDict):
 
             # 작업 타입 (일반 키워드 검색 (notWork) / 작업 키워드 검색 (work) / 작업 키워드 클릭 (realwork) 배열 만들기 )
             try:
-                activeArrLengthArr = [6,7]
-                activeArrInnerArr = [3,4]
-                # workArr = create_active_array(activeArrLengthArr, activeArrInnerArr, 3)
-                workArr = create_active_array(activeArrLengthArr, activeArrInnerArr)
+                # activeArrLengthArr = [6,7]
+                # activeArrInnerArr = [3,4]
+                # # workArr = create_active_array(activeArrLengthArr, activeArrInnerArr, 3)
+                # workArr = create_active_array(activeArrLengthArr, activeArrInnerArr)
+
+                activeArrLengthArr = [7,8]
+                activeArrInnerArr = [4,5]
+                realWorkRanNom = random.randint(2,3)
+                workArr = create_active_array(activeArrLengthArr, activeArrInnerArr, realWorkRanNom)
             except Exception as e:
                 print(str(e))
                 pg.alert('알수없는 오류!!')
