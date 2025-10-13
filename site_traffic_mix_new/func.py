@@ -1,10 +1,9 @@
 import random
 import string
 import threading
-import time
 from datetime import datetime, timedelta
 import sys
-import os
+import tempfile, shutil, psutil, subprocess, os, time
 import pyperclip
 from pathlib import Path
 import json
@@ -18,7 +17,7 @@ import requests
 from requests import get
 import zipfile
 from openpyxl import load_workbook
-from selenium import webdriver
+
 # from selenium.webdriver import Keys
 # from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
@@ -27,9 +26,10 @@ from selenium.webdriver.support import expected_conditions as EC
 # from selenium.webdriver.support.select import Select
 # from selenium.common.exceptions import WebDriverException
 
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
+
 from selenium.common.exceptions import WebDriverException
+from selenium.common.exceptions import NoAlertPresentException
+from selenium.common.exceptions import TimeoutException
 # from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
 # import chromedriver_autoinstaller
@@ -42,7 +42,6 @@ import winsound as ws
 import glob
 import asyncio
 import winsound as sd
-import shutil
 import getpass
 import math
 import ctypes
@@ -265,6 +264,9 @@ def searchPcAnotherList(driver, workCount, test = None, subject = ""):
             print('onotherList 작업 GO')
             # 타겟 외 다른 포스팅 클릭하는 부분, 가끔 timeout이 발생하니 에러가 날 경우 돌아가기!
             ranNumCount = -1
+
+            
+
             while True:
 
                 print('여기서 도는건가??')
@@ -288,19 +290,24 @@ def searchPcAnotherList(driver, workCount, test = None, subject = ""):
                     errStatus = False
                     oddCount = 0
                     while True:
+
+                        main_window = driver.current_window_handle
+
+            
+                        print('클릭 시도중.....')
                         oddCount += 1
                         errCount += 1
                         if errCount > 10:
                             errStatus = True
+                            print('에러 카운트 10회 초과로 포기함;;;')
                             break
                         try:
                             wait_float(0.3,0.5)
                             forClickEle.click()
+                            print('게시글 클릭 완료!!')
                             break
                         except Exception as e:
                             print(str(e))
-                            print('요소 클릭 실패 에러!! (해당 페이지는 검색창이 있는 화면이어야 함)')
-                            print(forClickEle.text)
                             wait_float(0.3,0.5)
                             if oddCount % 2 == 0:
                                 pg.scroll(200)
@@ -308,15 +315,64 @@ def searchPcAnotherList(driver, workCount, test = None, subject = ""):
                                 pg.scroll(-200)
 
                     if errStatus == False:
+                        print('에러 발생 X 스크롤 내리기!!')
+                        wait_float(1.2,1.9)
+                        try:
+                            # 핸들 변경 후 최대 20초까지만 대기
+                            driver.switch_to.window(driver.window_handles[-1])
+                            print('3. 창 전환 성공11?')
+                            print(driver.title)
+                            driver.set_page_load_timeout(20)
+                            print(driver.title)
+                            print('3. 창 전환 성공22?')
+                            
+                            
+                        except Exception as e:
+                            print(str(e))
+                            print('로딩 오래 걸림')
+                            # 원래 창으로 돌아오기 작업
+                            driver.close()
+                            while True:
+                                print('원래 창으로 돌아오기 시도중.....')
+                                try:
+                                    print(0)
+                                    # driver.switch_to.window(driver.window_handles[0])
+                                    driver.switch_to.window(main_window)
+                                    print(1)
+                                    handles = driver.window_handles
+                                    print("모든 창 목록:", handles)
+                                    print(2)
+                                    current = driver.current_window_handle
+                                    print("현재 창 핸들:", current)
+                                    print(3)
+                                    current_index = handles.index(current)
+                                    print(current_index)
+                                    print(4)
+                                    if current_index == 0:
+                                        break
+                                    
+                                    print('원래 창으로 돌아오기 완료!!')
+                                except Exception as e:
+                                    print(str(e))
+                                    pass
+                            continue
+
+                        finally:
+                            print('finally 진입!!!')
+                            pass
+
+
+                        print("현재 탭:", driver.current_window_handle)
+                        print("현재 탭 타이틀!", driver.title)
                         scrollRanVal = random.randrange(5, 12)
                         for k in range(scrollRanVal):
-                            
                             pg.moveTo(300,400)
                             pg.scroll(-150)
                             if test == 'ok':
                                 wait_float(0.1,0.4)
                             else:
                                 wait_float(2.5,3.5)
+                        print('스크롤 내리기 완료!!')
                             
                             
                 except Exception as e:
@@ -325,7 +381,30 @@ def searchPcAnotherList(driver, workCount, test = None, subject = ""):
                     pg.press('F5')
                     pass
 
-                driver.switch_to.window(driver.window_handles[0])
+                # 원래 창으로 돌아오기 작업
+                while True:
+                    print('원래 창으로 돌아오기 시도중.....')
+                    try:
+                        print(0)
+                        # driver.switch_to.window(driver.window_handles[0])
+                        driver.switch_to.window(main_window)
+                        print(1)
+                        handles = driver.window_handles
+                        print("모든 창 목록:", handles)
+                        print(2)
+                        current = driver.current_window_handle
+                        print("현재 창 핸들:", current)
+                        print(3)
+                        current_index = handles.index(current)
+                        print(current_index)
+                        print(4)
+                        if current_index == 0:
+                            break
+                        
+                        print('원래 창으로 돌아오기 완료!!')
+                    except Exception as e:
+                        print(str(e))
+                        pass
             pg.press('home')
         except Exception as e:
             print(e)
@@ -564,14 +643,17 @@ def searchMobileAnotherList(driver, workCount, test = None, subject = ""):
                     errStatus = False
                     oddCount = 0
                     while True:
+                        print('클릭 시도중.....')
                         oddCount += 1
                         errCount += 1
                         if errCount > 10:
                             errStatus = True
+                            print('에러 카운트 10회 초과로 포기함;;;')
                             break
                         try:
                             wait_float(0.3,0.5)
                             forClickEle.click()
+                            print('게시글 클릭 완료!!')
                             break
                         except Exception as e:
                             print(str(e))
@@ -584,6 +666,7 @@ def searchMobileAnotherList(driver, workCount, test = None, subject = ""):
                                 pg.scroll(-200)
 
                     if errStatus == False:
+                        print('에러 발생 X 스크롤 내리기!!')
                         scrollRanVal = random.randrange(5, 12)
                         for k in range(scrollRanVal):
                             
@@ -593,7 +676,8 @@ def searchMobileAnotherList(driver, workCount, test = None, subject = ""):
                             else:
                                 wait_float(2.5,3.5)
                             pg.scroll(-150)
-                            
+                        print('스크롤 내리기 완료!!')
+
                 except Exception as e:
                     print(str(e))
                     print('onotherList 를 못찾거나 하는 에러!!')
@@ -872,7 +956,7 @@ def goBackToMobileSearchTab(driver):
                 if handle != main_window:
                     # 남기고 싶은 창이 아니면 닫기
                     driver.switch_to.window(handle)
-                    driver.quit()
+                    driver.close()
                     
             driver.switch_to.window(main_window)
         except:
@@ -1181,3 +1265,82 @@ def get_active_window_index(driver):
     current_window_handle = driver.current_window_handle
     all_window_handles = driver.window_handles
     return all_window_handles.index(current_window_handle)
+
+
+
+
+
+# alert 창 닫기 함수
+
+def close_alert_if_exists(driver):
+    try:
+        alert = driver.switch_to.alert
+        print("팝업 감지됨:", alert.text)
+        alert.accept()
+        print("팝업 닫음")
+    except NoAlertPresentException:
+        pass  # 팝업 없으면 무시
+
+
+
+
+
+def wait_complete_or_fail(drv, timeout=1.0):
+    start = time.perf_counter()
+    while True:
+        # 1️⃣ 타이머 초과 → False 반환
+        if time.perf_counter() - start > timeout:
+            try:
+                drv.execute_cdp_cmd("Page.stopLoading", {})
+            except Exception:
+                pass
+            print(f"❌ 로딩 {timeout}초 초과로 실패")
+            return False
+
+        try:
+            # 2️⃣ 로딩 완료 → True 반환
+            state = drv.execute_script("return document.readyState")
+            if state == "complete":
+                print("✅ 페이지 로딩 완료")
+                return True
+        except Exception:
+            # 탭 전환 등 일시적 오류는 무시
+            pass
+
+        time.sleep(0.03)
+
+
+
+
+# driver.quit() 대신 사용! (크롬 드라이버 및 크롬 프로세스 완전 종료)
+def close_driver(driver, service, user_data_dir):
+    # 1) 정상 종료 시도
+    try: driver.quit()
+    except: pass
+    time.sleep(0.3)
+
+    # 2) chromedriver 및 자식 프로세스 강제 종료 (내가 띄운 것만)
+    try:
+        if service and service.process:
+            p = psutil.Process(service.process.pid)
+            # 자식부터 kill
+            for child in p.children(recursive=True):
+                try: child.kill()
+                except: pass
+            try: p.kill()
+            except: pass
+    except: pass
+
+    # 3) 혹시 남은 Chrome 중에 "내 user-data-dir"을 쓰는 것만 골라서 kill
+    try:
+        for proc in psutil.process_iter(["pid","name","cmdline"]):
+            name = (proc.info["name"] or "").lower()
+            cmd  = " ".join(proc.info.get("cmdline") or [])
+            if "chrome" in name and user_data_dir and user_data_dir in cmd:
+                try: proc.kill()
+                except: pass
+    except: pass
+
+    # 4) 임시 프로필 폴더 정리
+    try: shutil.rmtree(user_data_dir, ignore_errors=True)
+    except: pass

@@ -1,5 +1,10 @@
 from func import *
 
+
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+
 def trfficScript(getDict):
 
     
@@ -85,11 +90,32 @@ def trfficScript(getDict):
                 # 크롬 접속!! (기본 5초 주고 5초 내 접속 못하면 아이피 변경으로 돌아가기~~)
                 if workType['pr_work_type'] == 'pc':
                     try:
-                        pcUser = getpass.getuser()
+                        # pcUser = getpass.getuser()
+                        user_data_dir = tempfile.mkdtemp(prefix="selenium_profile_")
                         options = Options()
-                        # user_data = f'C:\\Users\\{pcUser}\\AppData\\Local\\Google\\Chrome\\User Data\\default'
-                        # options.add_argument(f"user-data-dir={user_data}")
-                        # options.add_argument(f'--profile-directory=Profile {profileInfo['pl_number']}')
+                        options.add_argument(f"--user-data-dir={user_data_dir}")  # 프로필 분리(누수 ↓)
+                        service = Service()  # chromedriver PATH 잡혀있다고 가정
+
+                        # 브라우저가 자동화된 테스트 소프트웨어에 의해 제어되고 있음을 감추기 위한 옵션
+                        options.add_experimental_option("excludeSwitches", ["enable-automation"])
+                        options.add_experimental_option("useAutomationExtension", False)
+
+
+                        prefs = {
+                            "profile.default_content_setting_values.notifications": 2,  # 1: 허용 / 2: 차단
+                            # 팝업창 차단
+                            "profile.default_content_setting_values.popups": 2,
+                            # (선택) 침입적 광고 차단
+                            "profile.managed_default_content_settings.ads": 2,
+                            # (선택) 서드파티 쿠키 차단 → 광고 트래커 감소
+                            "profile.block_third_party_cookies": True,
+                        }
+
+                        options.add_experimental_option("prefs", prefs)
+
+                        # 🚫 자동 팝업 알림, 브라우저 자체 알림도 비활성화
+                        options.add_argument("--disable-notifications")
+                        options.add_argument("--disable-popup-blocking")
 
                         # 캐시 및 저장된 데이터 관련
                         options.add_argument("--disable-background-timer-throttling")
@@ -112,22 +138,19 @@ def trfficScript(getDict):
                         options.add_argument("--disable-background-networking")
                         options.add_argument("--disable-sync")
 
-                        # 브라우저가 자동화된 테스트 소프트웨어에 의해 제어되고 있음을 감추기 위한 옵션
-                        options.add_experimental_option("excludeSwitches", ["enable-automation"])
-
-                        # 로그 레벨 설정으로 불필요한 시스템 호출 줄이기
-                        options.add_experimental_option('excludeSwitches', ['enable-logging'])
-
-
-
                         driver = webdriver.Chrome(options=options)
+                        driver.set_page_load_timeout(3)
+
                         driver.get('https://www.naver.com')
-                        driver.set_page_load_timeout(12)
+                        
                         driver.set_window_size(1300, 800)
                         driver.set_window_position(0,0)
+                        
                         break
-                    except Exception as e:
+                    except TimeoutException as e:
+
                         print(e)
+                        print("❌ 1초 초과 → TimeoutException 발생")
                         print('크롬 창 오픈 실패!!')
                         if driver:
                             driver.quit()
@@ -141,7 +164,11 @@ def trfficScript(getDict):
                             userAgentInfo = res['user_agent_info']['ua_content']
                             try:
                                 pcUser = getpass.getuser()
+                                user_data_dir = tempfile.mkdtemp(prefix="selenium_profile_")
                                 options = Options()
+                                options.add_argument(f"--user-data-dir={user_data_dir}")  # 프로필 분리(누수 ↓)
+                                service = Service()  # chromedriver PATH 잡혀있다고 가정
+                                
                                 # user_data = f'C:\\Users\\{pcUser}\\AppData\\Local\\Google\\Chrome\\User Data\\default'
                                 # options.add_argument(f"user-data-dir={user_data}")
                                 # options.add_argument(f'--profile-directory=Profile {profileInfo['pl_number']}')
@@ -170,6 +197,7 @@ def trfficScript(getDict):
                                 options.add_argument("--disable-background-networking")
                                 options.add_argument("--disable-sync")
                                 options.add_experimental_option("excludeSwitches", ["enable-automation"])
+                                options.add_experimental_option("useAutomationExtension", False)
                                 driver = webdriver.Chrome(options=options)
                                 driver.get('https://www.naver.com')
                                 start_time = time.time()
@@ -338,7 +366,9 @@ def trfficScript(getDict):
                             continue
 
                 elif work =='realwork':
+                    errCount = 0
                     while True:
+                        errCount += 1
                         try:
                             res = requests.get(f"{siteLink}/api/v7/res_traffic_work/load_realwork?group={workType['pr_group']}&work_type={workType['pr_work_type']}").json()
                             print('realwork 정보 가지고 오기!!')
@@ -348,6 +378,11 @@ def trfficScript(getDict):
                                 if workInfo['st_subject'] not in workedKeywordArr:
                                     workedKeywordArr.append(workInfo['st_subject'])
                                     break
+                                else:
+                                    if errCount > 5:
+                                        errCount = 0
+                                        workedKeywordArr = []
+                                    print('중복된 키워드!!!')
 
                             
                         except Exception as e:
@@ -419,12 +454,12 @@ def trfficScript(getDict):
             seconds = int(elapsed_time % 60)
             with open('./work_time.txt', 'a') as file:
                 file.write(f"종료시간 : {end_time_str} / 프로그램 실행 시간: {minutes}분 {seconds}초\n")
-            driver.quit()
+            close_driver(driver, service, user_data_dir)
 
             continue
         except Exception as e:
             print(str(e))
-            driver.quit()
+            close_driver(driver, service, user_data_dir)
             
 
 
