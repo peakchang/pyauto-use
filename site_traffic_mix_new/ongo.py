@@ -7,6 +7,8 @@ from selenium.webdriver.chrome.service import Service
 
 def trfficScript(getDict):
 
+    pg.FAILSAFE_POINTS = [(0, 0), (1919, 0)]
+
     
     workType = {}
     # testWork = 'ok'
@@ -232,15 +234,14 @@ def trfficScript(getDict):
 
             # 작업 타입 (일반 키워드 검색 (notWork) / 작업 키워드 검색 (work) / 작업 키워드 클릭 (realwork) 배열 만들기 )
             try:
-                # activeArrLengthArr = [6,7]
-                # activeArrInnerArr = [3,4]
-                # # workArr = create_active_array(activeArrLengthArr, activeArrInnerArr, 3)
-                # workArr = create_active_array(activeArrLengthArr, activeArrInnerArr)
+                activeArrLengthArr = [6,7]
+                activeArrInnerArr = [3,4]
+                workArr = create_active_array(activeArrLengthArr, activeArrInnerArr)
 
-                activeArrLengthArr = [7,8]
-                activeArrInnerArr = [4,5]
-                realWorkRanNom = random.randint(2,3)
-                workArr = create_active_array(activeArrLengthArr, activeArrInnerArr, realWorkRanNom)
+                # activeArrLengthArr = [7,8]
+                # activeArrInnerArr = [4,5]
+                # realWorkRanNom = random.randint(2,3)
+                # workArr = create_active_array_many(activeArrLengthArr, activeArrInnerArr, realWorkRanNom)
             except Exception as e:
                 print(str(e))
                 pg.alert('알수없는 오류!!')
@@ -282,7 +283,8 @@ def trfficScript(getDict):
                     naverMainSearch(driver, workInfo['pk_content'], workType['pr_work_type'])
                     wait_float(1.2,1.9)
 
-                    onotherWorkNum = random.randint(1, 2)
+                    # onotherWorkNum = random.randint(1, 2)
+                    onotherWorkNum = 1
                     if workType['pr_work_type'] == 'mobile':
                         searchStatus = searchMobileAnotherList(driver, onotherWorkNum, testWork, workInfo['pk_content'])
                     else:
@@ -328,7 +330,8 @@ def trfficScript(getDict):
                     naverMainSearch(driver, workInfo['st_subject'], workType['pr_work_type'])
 
                     # 먼저 아무거나 클릭 하나!!!
-                    onotherWorkNum = random.randint(1, 2)
+                    # onotherWorkNum = random.randint(1, 2)
+                    onotherWorkNum = 1
                     if workType['pr_work_type'] == 'mobile':
                         searchStatus = searchMobileAnotherList(driver, onotherWorkNum, testWork)
                     else:
@@ -403,7 +406,8 @@ def trfficScript(getDict):
 
                     # 모바일은 나중에~~~~ 안할 가능성도 크고~~~~
                     # 먼저 아무거나 클릭 하나!!!
-                    onotherWorkNum = random.randint(1, 2)
+                    # onotherWorkNum = random.randint(1, 2)
+                    onotherWorkNum = 1
                     if workType['pr_work_type'] == 'mobile':
                         searchStatus = searchMobileAnotherList(driver, onotherWorkNum, testWork)
                     else:

@@ -411,9 +411,8 @@ def goScript(getDict):
                 if ex_linkGroup is None:
                     ex_linkGroup = 1
                 while True:
-                    print('여기서 안되는건가??')
                     try:
-                        linkRes = requests.post(f"{siteLink}/api/v7/res_blog/get_link_two", {'link_count' : 1, 'link_group' : ex_linkGroup}).json()
+                        linkRes = requests.post(f"{siteLink}/api/v7/res_blog/get_link_two", {'link_count' : 2, 'link_group' : ex_linkGroup}).json()
                         print(linkRes)
                         if linkRes['status'] == True and len(linkRes['ran_work_list']) == 2:
                             print(linkRes)

@@ -58,37 +58,37 @@ keywords = [
 ]
 
 
-# def create_active_array(lengthArr, innerArr):
-#     # 배열의 길이는 랜덤한 값을 사용
-#     length = random.randint(lengthArr[0], lengthArr[1])
+def create_active_array(lengthArr, innerArr):
+    # 배열의 길이는 랜덤한 값을 사용
+    length = random.randint(lengthArr[0], lengthArr[1])
     
-#     # 기본적으로 모두 'notWork'로 채운다
-#     array = ['notWork'] * length
+    # 기본적으로 모두 'notWork'로 채운다
+    array = ['notWork'] * length
     
-#     # 첫 번째와 마지막 요소는 'notWork'로 유지
-#     array[0] = 'notWork'
-#     array[-1] = 'notWork'
+    # 첫 번째와 마지막 요소는 'notWork'로 유지
+    array[0] = 'notWork'
+    array[-1] = 'notWork'
     
-#     # 'work'의 개수를 랜덤으로 결정
-#     num_of_works = random.randint(innerArr[0], innerArr[1])
+    # 'work'의 개수를 랜덤으로 결정
+    num_of_works = random.randint(innerArr[0], innerArr[1])
     
-#     # 첫 번째와 마지막 요소를 제외한 인덱스 리스트
-#     available_positions = list(range(1, length - 1))
+    # 첫 번째와 마지막 요소를 제외한 인덱스 리스트
+    available_positions = list(range(1, length - 1))
     
-#     # 무작위로 num_of_works개의 위치를 선택하여 'work'로 설정
-#     work_positions = random.sample(available_positions, num_of_works)
+    # 무작위로 num_of_works개의 위치를 선택하여 'work'로 설정
+    work_positions = random.sample(available_positions, num_of_works)
     
-#     for pos in work_positions:
-#         array[pos] = 'work'
+    for pos in work_positions:
+        array[pos] = 'work'
     
-#     # 'work' 위치 중 하나를 선택하여 'realwork'로 변경
-#     if work_positions:  # work_positions가 비어 있지 않은지 확인
-#         realwork_position = random.choice(work_positions)
-#         array[realwork_position] = 'realwork'
+    # 'work' 위치 중 하나를 선택하여 'realwork'로 변경
+    if work_positions:  # work_positions가 비어 있지 않은지 확인
+        realwork_position = random.choice(work_positions)
+        array[realwork_position] = 'realwork'
     
-#     return array
+    return array
 
-def create_active_array(lengthArr, innerArr, num_realworks=1):
+def create_active_array_many(lengthArr, innerArr, num_realworks=1):
     length = random.randint(lengthArr[0], lengthArr[1])
     array = ['notWork'] * length
     array[0] = 'notWork'
@@ -652,6 +652,7 @@ def searchMobileAnotherList(driver, workCount, test = None, subject = ""):
                             break
                         try:
                             wait_float(0.3,0.5)
+                            driver.set_page_load_timeout(15)
                             forClickEle.click()
                             print('게시글 클릭 완료!!')
                             break
