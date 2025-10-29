@@ -3,8 +3,6 @@ from func import *
 
 
 def trfficScript(getDict):
-    pg.alert('잠깐만?!')
-
     testWork = 'ok'
     workType = {}
     # testWork = None
@@ -77,49 +75,7 @@ def trfficScript(getDict):
                         options = Options()
                         options.add_argument(f"--user-data-dir={user_data_dir}")  # 프로필 분리(누수 ↓)
                         service = Service()  # chromedriver PATH 잡혀있다고 가정
-
-                        # 브라우저가 자동화된 테스트 소프트웨어에 의해 제어되고 있음을 감추기 위한 옵션
                         options.add_experimental_option("excludeSwitches", ["enable-automation"])
-                        options.add_experimental_option("useAutomationExtension", False)
-
-
-                        prefs = {
-                            "profile.default_content_setting_values.notifications": 2,  # 1: 허용 / 2: 차단
-                            # 팝업창 차단
-                            "profile.default_content_setting_values.popups": 2,
-                            # (선택) 침입적 광고 차단
-                            "profile.managed_default_content_settings.ads": 2,
-                            # (선택) 서드파티 쿠키 차단 → 광고 트래커 감소
-                            "profile.block_third_party_cookies": True,
-                        }
-
-                        options.add_experimental_option("prefs", prefs)
-
-                        # 🚫 자동 팝업 알림, 브라우저 자체 알림도 비활성화
-                        options.add_argument("--disable-notifications")
-                        options.add_argument("--disable-popup-blocking")
-
-                        # 캐시 및 저장된 데이터 관련
-                        options.add_argument("--disable-background-timer-throttling")
-                        options.add_argument("--disable-backgrounding-occluded-windows")
-                        options.add_argument("--disable-renderer-backgrounding")
-                        options.add_argument("--disable-features=TranslateUI")
-
-                        # PDH 에러 방지를 위한 추가 옵션
-                        options.add_argument("--disable-dev-shm-usage")  # 공유 메모리 사용 안함
-                        options.add_argument("--no-sandbox")  # 샌드박스 비활성화
-                        options.add_argument("--disable-gpu")  # GPU 가속 비활성화
-                        options.add_argument("--disable-software-rasterizer")
-                        
-                        # 성능 모니터링 비활성화 (PDH 관련)
-                        options.add_argument("--disable-background-networking")
-                        options.add_argument("--metrics-recording-only")
-                        options.add_argument("--disable-background-timer-throttling")
-                        
-                        # 쿠키 및 세션 완전 초기화
-                        options.add_argument("--disable-background-networking")
-                        options.add_argument("--disable-sync")
-
                         driver = webdriver.Chrome(options=options)
                         driver.set_page_load_timeout(15)
 
@@ -130,54 +86,23 @@ def trfficScript(getDict):
                         
                         break
                     except TimeoutException as e:
-
                         print(e)
-                        print("❌ 1초 초과 → TimeoutException 발생")
                         print('크롬 창 오픈 실패!!')
-                        if driver:
-                            driver.quit()
+                        driver.quit()
                         pass
                 else:
                     try:
                         res = requests.get(f"{siteLink}/api/v7/res_traffic_work/get_user_agent").json()
-                        print(res)
                         print(res['user_agent_info']['ua_content'])
                         if res['status'] == True and res['user_agent_info']['ua_content'] is not None:
                             userAgentInfo = res['user_agent_info']['ua_content']
                             try:
-                                pcUser = getpass.getuser()
                                 user_data_dir = tempfile.mkdtemp(prefix="selenium_profile_")
                                 options = Options()
                                 options.add_argument(f"--user-data-dir={user_data_dir}")  # 프로필 분리(누수 ↓)
                                 service = Service()  # chromedriver PATH 잡혀있다고 가정
-                                
-                                # user_data = f'C:\\Users\\{pcUser}\\AppData\\Local\\Google\\Chrome\\User Data\\default'
-                                # options.add_argument(f"user-data-dir={user_data}")
-                                # options.add_argument(f'--profile-directory=Profile {profileInfo['pl_number']}')
-
                                 options.add_argument(f'user-agent={userAgentInfo}')
 
-                                # 캐시 및 저장된 데이터 관련
-                                options.add_argument("--disable-background-timer-throttling")
-                                options.add_argument("--disable-backgrounding-occluded-windows")
-                                options.add_argument("--disable-renderer-backgrounding")
-                                options.add_argument("--disable-features=TranslateUI")
-
-
-                                # PDH 에러 방지를 위한 추가 옵션
-                                options.add_argument("--disable-dev-shm-usage")  # 공유 메모리 사용 안함
-                                options.add_argument("--no-sandbox")  # 샌드박스 비활성화
-                                options.add_argument("--disable-gpu")  # GPU 가속 비활성화
-                                options.add_argument("--disable-software-rasterizer")
-                                
-                                # 성능 모니터링 비활성화 (PDH 관련)
-                                options.add_argument("--disable-background-networking")
-                                options.add_argument("--metrics-recording-only")
-                                options.add_argument("--disable-background-timer-throttling")
-                                
-                                # 쿠키 및 세션 완전 초기화
-                                options.add_argument("--disable-background-networking")
-                                options.add_argument("--disable-sync")
                                 options.add_experimental_option("excludeSwitches", ["enable-automation"])
                                 options.add_experimental_option("useAutomationExtension", False)
                                 driver = webdriver.Chrome(options=options)
@@ -189,8 +114,7 @@ def trfficScript(getDict):
                             except Exception as e:
                                 print(e)
                                 print('크롬 창 오픈 실패!!')
-                                if driver:
-                                    driver.quit()
+                                driver.quit()
                                 pass
 
                     except Exception as e:
@@ -200,10 +124,11 @@ def trfficScript(getDict):
                 
 
             
-            wait_float(180.0, 200.0)
+            wait_float_timer(30,33)
             # 작업이 끝났으면 마지막 트래픽 에다가 현재 시간 업데이트
             while True:
-                wait_float(0.3,0.9)
+                print('작업 끝 마지막 작업 시간 업데이트!')
+                wait_float_timer(0,1)
                 try:
                     res = requests.get(f"{siteLink}/api/v7/res_traffic_work/update_last_traffic?sl_id={pcId}").json()
                     if res['status'] == True:

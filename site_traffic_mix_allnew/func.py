@@ -106,15 +106,38 @@ def wait_float(start, end):
     time.sleep(wait_ran)
 
 
+def wait_float_timer(start, end, show=True):
+    wait_ran = random.uniform(start, end)
+    total = int(wait_ran)
+
+    if show:
+        print(f"[INFO] 대기 시작: {wait_ran:.2f}초 예정")
+
+    for sec in range(total, 0, -1):
+        if show:
+            print(f"[INFO] 남은 시간: {sec}초")
+        time.sleep(1)
+
+    # 잔여 소수점(0~1초 미만)도 정확히 기다림
+    remainder = wait_ran - total
+    if remainder > 0:
+        time.sleep(remainder)
+
+    if show:
+        print("[INFO] 대기 완료 ✅")
+
+
 
 # driver.quit() 대신 사용! (크롬 드라이버 및 크롬 프로세스 완전 종료)
 def close_driver(driver, service, user_data_dir):
     # 1) 정상 종료 시도
+    print("1) 정상 종료 시도")
     try: driver.quit()
     except: pass
     time.sleep(0.3)
 
     # 2) chromedriver 및 자식 프로세스 강제 종료 (내가 띄운 것만)
+    print("2) chromedriver 및 자식 프로세스 강제 종료 (내가 띄운 것만)")
     try:
         if service and service.process:
             p = psutil.Process(service.process.pid)
@@ -127,6 +150,7 @@ def close_driver(driver, service, user_data_dir):
     except: pass
 
     # 3) 혹시 남은 Chrome 중에 "내 user-data-dir"을 쓰는 것만 골라서 kill
+    print("3) 혹시 남은 Chrome 중에 '내 user-data-dir'을 쓰는 것만 골라서 kill")
     try:
         for proc in psutil.process_iter(["pid","name","cmdline"]):
             name = (proc.info["name"] or "").lower()
@@ -137,5 +161,6 @@ def close_driver(driver, service, user_data_dir):
     except: pass
 
     # 4) 임시 프로필 폴더 정리
+    print('4) 임시 프로필 폴더 정리')
     try: shutil.rmtree(user_data_dir, ignore_errors=True)
     except: pass
