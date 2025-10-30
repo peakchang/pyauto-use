@@ -1,58 +1,25 @@
 import random
-import string
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime
 import sys
 import tempfile, shutil, psutil, subprocess, os, time
-from pathlib import Path
-import json
-import re
-import pyautogui as pg
-import pygetwindow as gw
-import ctypes
-from pywinauto import Desktop
-import clipboard as cb
+from ppadb.client import Client as AdbClient
 import requests
-from requests import get
-import zipfile
-from openpyxl import load_workbook
+import clipboard as cb
+import pyautogui as pg
 
-# from selenium.webdriver import Keys
-# from selenium.webdriver import ActionChains
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-# from selenium.webdriver.support.select import Select
-# from selenium.common.exceptions import WebDriverException
+import ctypes
+import pygetwindow as gw
+from pywinauto import Desktop
+
+from tkinter import *
+import tkinter as tk
+from tkinter import ttk
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
-
-
-from selenium.common.exceptions import WebDriverException
-from selenium.common.exceptions import NoAlertPresentException
-from selenium.common.exceptions import TimeoutException
-# from selenium.webdriver.chrome.service import Service as ChromeService
-from webdriver_manager.chrome import ChromeDriverManager
-# import chromedriver_autoinstaller
-from ppadb.client import Client as AdbClient
-# import keyboard
-import tkinter as tk
-from tkinter import *
-from tkinter import ttk
-import winsound as ws
-import glob
-import asyncio
-import winsound as sd
-import getpass
-import math
-import ctypes
-
-import winsound as sd
-
-
-
+from selenium.webdriver.common.by import By
 
 def changeIp():
     try:
@@ -164,3 +131,30 @@ def close_driver(driver, service, user_data_dir):
     print('4) 임시 프로필 폴더 정리')
     try: shutil.rmtree(user_data_dir, ignore_errors=True)
     except: pass
+
+
+def focus_window(winNames):
+    try:
+        user32 = ctypes.windll.user32
+        foreground_window = user32.GetForegroundWindow()
+        window = gw.Window(foreground_window)
+        chkDriver = False
+
+        print(winNames)
+        for winName in winNames:
+            print(window.title)
+            if winName in window.title:
+                chkDriver = True
+                break
+            else:
+                windows = Desktop(backend="uia").windows()
+                for window in windows:
+                    if winName in window.window_text():
+                        window.set_focus()
+                        break
+        return chkDriver
+            
+
+    except Exception as e:
+        print(str(e))
+        pass

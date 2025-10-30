@@ -29,6 +29,7 @@ def trfficScript(getDict):
         pcId = file.read()
 
     workType['pr_work_type'] = ''
+    workInfo = {} # 1회 돌아갈때 작업 할 정보 담는 객체
     while True:
 
         if getDict['workTypeVal'] == 'mix':
@@ -85,7 +86,7 @@ def trfficScript(getDict):
                         driver.set_window_position(0,0)
                         
                         break
-                    except TimeoutException as e:
+                    except Exception as e:
                         print(e)
                         print('크롬 창 오픈 실패!!')
                         driver.quit()
@@ -121,9 +122,156 @@ def trfficScript(getDict):
                         print(str(e))
                         print('프로필 정보 불러오기 오류!!')
                         continue
-                
 
             
+            # >>>>>>>>>>>>>>> 작업 라인 START!!!!!!
+
+            # while True:
+            #     x, y = pg.position()  # 현재 마우스 좌표 (x, y)
+            #     print(f"X: {x}, Y: {y}", end="\r")  # 같은 줄에서 갱신 출력
+            #     time.sleep(0.1)  # 0.1초마다 갱신
+
+
+            # not work 불러오기!!!!
+            while True:
+                print('not work 불러와야지?!')
+                try:
+                    res = requests.get(f"{siteLink}/api/v7/res_traffic_work/load_notwork").json()
+                    print('now work 정보!')
+                    print(res)
+                    if res['status'] == False:
+                        continue
+
+                    if res['status'] == True:
+                        workInfo = res['get_keyword']
+                        break
+                    else:
+                        continue
+                except Exception as e:
+                    print(str(e))
+                    pass
+
+            # 시작!!! 네이버 검색!!
+            while True:
+                print('네이버 검색 시작!')
+                while True:
+                    wait_float_timer(0,1)
+                    pg.moveTo(160,160)
+                    pg.leftClick()
+                    print('검색 start!!')
+                    focusChk = focus_window('NAVER')
+                    if focusChk:
+                        break
+                    else:
+                        wait_float(1.2,1.9)
+                        pg.press('F5')
+                        
+
+                try:
+                    wait_float(0.5,0.8)
+                    mainSearchTab = driver.find_element(by=By.CSS_SELECTOR, value="#MM_SEARCH_FAKE")
+                    mainSearchTab.click()
+                except Exception as e:
+                    # print(str(e))
+                    pass
+
+                try:
+                    wait_float(0.5,0.8)
+                    subSearchTab = driver.find_element(by=By.CSS_SELECTOR, value="#query")
+                    subSearchTab.click()
+                except Exception as e:
+                    # print(str(e))
+                    pass
+
+                try:
+                    wait_float(0.5,0.8)
+                    subSearchTab = driver.find_element(by=By.CSS_SELECTOR, value="#nx_query")
+                    subSearchTab.click()
+                except Exception as e:
+                    # print(str(e))
+                    pass
+
+                try:
+                    wait_float(1.2,1.9)
+                    pg.hotkey('ctrl', 'a')
+                    pg.press('delete')
+                    wait_float(1.2,1.9)
+                    cb.copy(workInfo['pk_content'])
+                    pg.hotkey('ctrl', 'v')
+                    wait_float(1.2,1.9)
+                except:
+                    pass
+
+                print('검색 붙여넣기 완료~')
+
+                # 검색 완료 엔터!!!
+                try:
+                    subSearchTab = driver.find_element(by=By.CSS_SELECTOR, value="#query")
+                    searchVal = subSearchTab.get_attribute('value')
+                    if searchVal is not None and searchVal == workInfo['pk_content']:
+                        pg.press('enter')
+                except Exception as e:
+                    # print(str(e))
+                    pass
+
+                try:
+                    subSearchTab = driver.find_element(by=By.CSS_SELECTOR, value="#nx_query")
+                    searchVal = subSearchTab.get_attribute('value')
+                    if searchVal is not None and searchVal == workInfo['pk_content']:
+                        pg.press('enter')
+                except Exception as e:
+                    # print(str(e))
+                    pass
+
+                print('검색 엔터 완료!!')
+
+
+                # 검색 성공 확인!!
+                if workType['pr_work_type'] == 'mobile':
+                    try:
+                        wait_float(1.5,2.2)
+                        subSearchTab = driver.find_element(by=By.CSS_SELECTOR, value="#query")
+                        successSearchEle = driver.find_elements(by=By.CSS_SELECTOR, value=".sch_tab_wrap._sch_tab_wrap")
+                        searchVal = subSearchTab.get_attribute('value')
+                        if searchVal == workInfo['pk_content']:
+                            break
+                    except Exception as e:
+                        # print(str(e))
+                        pass
+
+                    try:
+                        wait_float(1.5,2.2)
+                        subSearchTab = driver.find_element(by=By.CSS_SELECTOR, value="#nx_query")
+                        successSearchEle = driver.find_elements(by=By.CSS_SELECTOR, value=".sch_tab_wrap._sch_tab_wrap")
+                        searchVal = subSearchTab.get_attribute('value')
+                        if searchVal == workInfo['pk_content']:
+                            break
+                    except Exception as e:
+                        # print(str(e))
+                        pass
+                else:
+                    try:
+                        wait_float(1.5,2.2)
+                        successSearchEle = driver.find_elements(by=By.CSS_SELECTOR, value=".lnb_group")
+                        subSearchTab = driver.find_element(by=By.CSS_SELECTOR, value="#query")
+                        searchVal = subSearchTab.get_attribute('value')
+                        if len(successSearchEle) > 0 and searchVal == workInfo['pk_content']:
+                            break
+                    except Exception as e:
+                        # print(str(e))
+                        pass
+
+                    try:
+                        wait_float(1.5,2.2)
+                        successSearchEle = driver.find_elements(by=By.CSS_SELECTOR, value=".lnb_group")
+                        subSearchTab = driver.find_element(by=By.CSS_SELECTOR, value="#nx_query")
+                        searchVal = subSearchTab.get_attribute('value')
+                        if len(successSearchEle) > 0 and searchVal == workInfo['pk_content']:
+                            break
+                    except Exception as e:
+                        # print(str(e))
+                        pass
+            print('검색 완료 체크!!!')
             wait_float_timer(30,33)
             # 작업이 끝났으면 마지막 트래픽 에다가 현재 시간 업데이트
             while True:
@@ -149,7 +297,6 @@ def trfficScript(getDict):
             # 코드 실행 라인
         except Exception as e:
             print(str(e))
-            pg.alert('체크점!!')
+            if driver:
+                driver.quit()
             pass
-
-    
