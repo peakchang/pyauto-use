@@ -158,3 +158,139 @@ def focus_window(winNames):
     except Exception as e:
         print(str(e))
         pass
+
+
+
+
+
+
+def focus_window_and_tab(driver, winNames):
+    try:
+        user32 = ctypes.windll.user32
+        foreground_window = user32.GetForegroundWindow()
+        gw_window = gw.Window(foreground_window)
+        chkDriver = False
+        
+        print(f"Finding windows/tabs: {winNames}")
+        
+        for winName in winNames:
+            # 1단계: 현재 포그라운드 윈도우 확인
+            print(f"Current foreground: {gw_window.title}")
+            if winName in gw_window.title:
+                chkDriver = True
+                # Selenium 탭도 확인
+                check_and_switch_tab(driver, winName)
+                break
+            else:
+                # 2단계: 다른 윈도우 찾기
+                windows = Desktop(backend="uia").windows()
+                window_found = False
+                
+                for uia_window in windows:
+                    if winName in uia_window.window_text():
+                        uia_window.set_focus()
+                        time.sleep(0.3)  # 포커스 전환 대기
+                        window_found = True
+                        chkDriver = True
+                        break
+                
+                if window_found:
+                    # 윈도우를 찾았으면 해당 윈도우의 Selenium 탭도 확인
+                    check_and_switch_tab(driver, winName)
+                    break
+        
+        return chkDriver
+            
+    except Exception as e:
+        print(f"Error in focus_window_and_tab: {str(e)}")
+        return False
+
+
+def check_and_switch_tab(driver, target_name):
+    """
+    Selenium driver의 모든 탭을 확인하고 
+    target_name이 포함된 탭으로 전환
+    """
+    try:
+        current_window = driver.current_window_handle
+        all_windows = driver.window_handles
+        
+        print(f"Total tabs: {len(all_windows)}")
+        
+        # 모든 탭 순회
+        for window_handle in all_windows:
+            driver.switch_to.window(window_handle)
+            time.sleep(0.1)  # 탭 전환 대기
+            
+            current_title = driver.title
+            print(f"Checking tab: {current_title}")
+            
+            # 원하는 탭 찾으면 해당 탭에 머물기
+            if target_name in current_title:
+                print(f"✓ Switched to tab: {current_title}")
+                return True
+        
+        # 찾지 못하면 원래 탭으로 복귀
+        driver.switch_to.window(current_window)
+        print(f"Target tab not found, stayed at: {driver.title}")
+        return False
+        
+    except Exception as e:
+        print(f"Error in check_and_switch_tab: {str(e)}")
+        return False
+    
+
+
+
+def create_active_array(lengthArr, innerArr):
+    # 배열의 길이는 랜덤한 값을 사용
+    length = random.randint(lengthArr[0], lengthArr[1])
+    
+    # 기본적으로 모두 'notWork'로 채운다
+    array = ['notWork'] * length
+    
+    # 첫 번째와 마지막 요소는 'notWork'로 유지
+    array[0] = 'notWork'
+    array[-1] = 'notWork'
+    
+    # 'work'의 개수를 랜덤으로 결정
+    num_of_works = random.randint(innerArr[0], innerArr[1])
+    
+    # 첫 번째와 마지막 요소를 제외한 인덱스 리스트
+    available_positions = list(range(1, length - 1))
+    
+    # 무작위로 num_of_works개의 위치를 선택하여 'work'로 설정
+    work_positions = random.sample(available_positions, num_of_works)
+    
+    for pos in work_positions:
+        array[pos] = 'work'
+    
+    # 'work' 위치 중 하나를 선택하여 'realwork'로 변경
+    if work_positions:  # work_positions가 비어 있지 않은지 확인
+        realwork_position = random.choice(work_positions)
+        array[realwork_position] = 'realwork'
+    
+    return array
+
+def create_active_array_many(lengthArr, innerArr, num_realworks=1):
+    length = random.randint(lengthArr[0], lengthArr[1])
+    array = ['notWork'] * length
+    array[0] = 'notWork'
+    array[-1] = 'notWork'
+    
+    available_positions = list(range(1, length - 1))
+    
+    # 뽑을 수 있는 개수보다 크게 안 뽑게 보정
+    num_of_works = min(random.randint(innerArr[0], innerArr[1]), len(available_positions))
+    
+    work_positions = random.sample(available_positions, num_of_works)
+    for pos in work_positions:
+        array[pos] = 'work'
+    
+    if work_positions:
+        num_realworks = min(num_realworks, len(work_positions))
+        realwork_positions = random.sample(work_positions, num_realworks)
+        for pos in realwork_positions:
+            array[pos] = 'realwork'
+    
+    return array

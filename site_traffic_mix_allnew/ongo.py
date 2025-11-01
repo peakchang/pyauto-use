@@ -131,6 +131,11 @@ def trfficScript(getDict):
             #     print(f"X: {x}, Y: {y}", end="\r")  # 같은 줄에서 갱신 출력
             #     time.sleep(0.1)  # 0.1초마다 갱신
 
+            activeArrLengthArr = [6,7]
+            activeArrInnerArr = [3,4]
+            workArr = create_active_array(activeArrLengthArr, activeArrInnerArr)
+            print(workArr)
+
 
             # not work 불러오기!!!!
             while True:
@@ -159,7 +164,7 @@ def trfficScript(getDict):
                     pg.moveTo(160,160)
                     pg.leftClick()
                     print('검색 start!!')
-                    focusChk = focus_window('NAVER')
+                    focusChk = focus_window_and_tab(driver, ['NAVER'])
                     if focusChk:
                         break
                     else:
@@ -225,72 +230,171 @@ def trfficScript(getDict):
 
                 print('검색 엔터 완료!!')
 
-
-                # 검색 성공 확인!!
-                if workType['pr_work_type'] == 'mobile':
-                    try:
-                        wait_float(1.5,2.2)
-                        subSearchTab = driver.find_element(by=By.CSS_SELECTOR, value="#query")
-                        successSearchEle = driver.find_elements(by=By.CSS_SELECTOR, value=".sch_tab_wrap._sch_tab_wrap")
-                        searchVal = subSearchTab.get_attribute('value')
-                        if searchVal == workInfo['pk_content']:
-                            break
-                    except Exception as e:
-                        # print(str(e))
-                        pass
-
-                    try:
-                        wait_float(1.5,2.2)
-                        subSearchTab = driver.find_element(by=By.CSS_SELECTOR, value="#nx_query")
-                        successSearchEle = driver.find_elements(by=By.CSS_SELECTOR, value=".sch_tab_wrap._sch_tab_wrap")
-                        searchVal = subSearchTab.get_attribute('value')
-                        if searchVal == workInfo['pk_content']:
-                            break
-                    except Exception as e:
-                        # print(str(e))
-                        pass
-                else:
-                    try:
-                        wait_float(1.5,2.2)
-                        successSearchEle = driver.find_elements(by=By.CSS_SELECTOR, value=".lnb_group")
-                        subSearchTab = driver.find_element(by=By.CSS_SELECTOR, value="#query")
-                        searchVal = subSearchTab.get_attribute('value')
-                        if len(successSearchEle) > 0 and searchVal == workInfo['pk_content']:
-                            break
-                    except Exception as e:
-                        # print(str(e))
-                        pass
-
-                    try:
-                        wait_float(1.5,2.2)
-                        successSearchEle = driver.find_elements(by=By.CSS_SELECTOR, value=".lnb_group")
-                        subSearchTab = driver.find_element(by=By.CSS_SELECTOR, value="#nx_query")
-                        searchVal = subSearchTab.get_attribute('value')
-                        if len(successSearchEle) > 0 and searchVal == workInfo['pk_content']:
-                            break
-                    except Exception as e:
-                        # print(str(e))
-                        pass
-            print('검색 완료 체크!!!')
-            wait_float_timer(30,33)
-            # 작업이 끝났으면 마지막 트래픽 에다가 현재 시간 업데이트
-            while True:
-                print('작업 끝 마지막 작업 시간 업데이트!')
-                wait_float_timer(0,1)
-                try:
-                    res = requests.get(f"{siteLink}/api/v7/res_traffic_work/update_last_traffic?sl_id={pcId}").json()
-                    if res['status'] == True:
+                for i in range(7):
+                    wait_float_timer(1,2)
+                    print('검색 확인 START!!!')
+                    focusChk = focus_window_and_tab(driver, [workInfo['pk_content'], '네이버', '검색'])
+                    if focusChk:
                         break
+                if focusChk:
+                    break
+                else:
+                    pg.press('F5')
+
+                    
+            print('검색 완료 체크!!!')
+
+            if workType['pr_work_type'] == 'pc':
+                # PC 버전으로 작업시!!
+                while True:
+                    try:
+                        sections = driver.find_elements(by=By.CSS_SELECTOR, value=".api_subject_bx")
+                        if len(sections) > 0:
+                            break
+                    except:
+                        pass
+
+                onotherList = []  # [(text, WebElement), ...] 형태로 저장
+                for sec in sections:
+                    # 1) 섹션 안에 fds-web-root 가 있으면 제외 (웹문서 영역)
+                    if sec.find_elements(By.CSS_SELECTOR, ".fds-web-root"):
+                        continue
+
+                    # 2) 없으면 타이틀 후보들 수집
+                    elems = sec.find_elements(
+                        By.CSS_SELECTOR,
+                        ".fds-comps-right-image-text-title, .sds-comps-text-type-headline1"
+                    )
+
+
+                    keywords = ["더보기", "찾는", "콘텐츠", "인기글", "지식", "동영상"]
+                    for el in elems:
+                        addStatus = True
+                        for keyword in keywords:
+                            if keyword in el.text:
+                                addStatus = False
+                            
+                        if addStatus == True:
+                            onotherList.append(el)
+
+                for data in onotherList:
+                    print(data.text)
+
+                pg.alert('PC 버전 잠깐만?!')
+
+            else:
+                # 모바일 버전으로 작업시!!
+
+                while True:
+                    try:
+                        sections = driver.find_elements(by=By.CSS_SELECTOR, value=".fds-default-mode")
+                        if len(sections) > 0:
+                            break
+                    except:
+                        pass
+                    
+                onotherList = []  # [(text, WebElement), ...] 형태로 저장
+                for sec in sections:
+                    # 1) 섹션 안에 fds-web-root 가 있으면 제외
+                    if sec.find_elements(By.CSS_SELECTOR, ".fds-web-root"):
+                        continue
+
+                    # 2) 없으면 타이틀 후보들 수집
+                    elems = sec.find_elements(
+                        By.CSS_SELECTOR,
+                        ".fds-comps-right-image-text-title, .sds-comps-text-type-headline1"
+                    )
+
+
+                    keywords = ["더보기", "찾는", "콘텐츠", "인기글", "지식", "동영상"]
+                    for el in elems:
+                        addStatus = True
+                        for keyword in keywords:
+                            if keyword in el.text:
+                                addStatus = False
+                            
+                        if addStatus == True:
+                            onotherList.append(el)
+                for data in onotherList:
+                    print(data.text)
+
+                workOnotherVal = random.randrange(0, len(onotherList) - 1)
+                forClickEle = onotherList.pop(workOnotherVal)
+                driver.set_page_load_timeout(15)
+                forClickEle.click()
+                pg.alert('모바일 버전 잠깐만?!')
+
+                
+                
+
+            wait_float_timer(30,33)
+
+
+            # 작업이 끝났으면 마지막 트래픽 에다가 현재 시간 업데이트
+            max_retries = 30  # 최대 재시도 횟수 설정
+            retry_count = 0
+
+            while retry_count < max_retries:
+                print(f'작업 끝 마지막 작업 시간 업데이트! (시도 {retry_count + 1}/{max_retries})')
+                wait_float_timer(0, 1)
+                
+                try:
+                    # timeout 설정 추가 (5초)
+                    print('마지막 작업 시간 저장!!')
+                    res = requests.get(
+                        f"{siteLink}/api/v7/res_traffic_work/update_last_traffic?sl_id={pcId}",
+                        timeout=5  # 5초 타임아웃
+                    ).json()
+
+                    print(res)
+                    
+                    if res.get('status') == True:  # res['status'] 대신 res.get('status') 사용
+                        print('[SUCCESS] 마지막 작업 시간 업데이트 완료!')
+                        break
+                    else:
+                        print(f'[WARNING] API 응답: {res}')
+                        retry_count += 1
+                        
+                except requests.exceptions.Timeout:
+                    print(f'[ERROR] 타임아웃 발생 (5초 초과)')
+                    retry_count += 1
+                    
+                except requests.exceptions.ConnectionError:
+                    print(f'[ERROR] 네트워크 연결 오류')
+                    retry_count += 1
+                    
+                except requests.exceptions.RequestException as e:
+                    print(f'[ERROR] 요청 오류: {str(e)}')
+                    retry_count += 1
+                    
                 except Exception as e:
-                    print(str(e))
-                    continue
+                    print(f'[ERROR] 예상치 못한 오류: {str(e)}')
+                    retry_count += 1
+                    
+                # 재시도 간격 (점진적으로 증가)
+                if retry_count < max_retries:
+                    wait_time = min(retry_count * 2, 10)  # 최대 10초
+                    print(f'[INFO] {wait_time}초 후 재시도...')
+                    time.sleep(wait_time)
+
+            # 최대 재시도 초과 시
+            if retry_count >= max_retries:
+                print(f'[CRITICAL] 최대 재시도 횟수({max_retries})를 초과했습니다!')
+                # 여기서 알림을 보내거나, 로그를 남기거나, 프로그램을 종료할 수 있습니다.
+
+            # 시간 기록
             end_time = time.time()
             end_time_str = datetime.fromtimestamp(end_time).strftime('%Y-%m-%d %H:%M:%S')
             elapsed_time = end_time - start_time
             minutes = int(elapsed_time // 60)
             seconds = int(elapsed_time % 60)
-            with open('./work_time.txt', 'a') as file:
-                file.write(f"종료시간 : {end_time_str} / 프로그램 실행 시간: {minutes}분 {seconds}초\n")
+
+            try:
+                with open('./work_time.txt', 'a', encoding='utf-8') as file:
+                    file.write(f"종료시간 : {end_time_str} / 프로그램 실행 시간: {minutes}분 {seconds}초\n")
+                print(f'[INFO] 작업 시간 기록 완료: {minutes}분 {seconds}초')
+            except Exception as e:
+                print(f'[ERROR] 파일 저장 실패: {str(e)}')
 
             close_driver(driver, service, user_data_dir)
 
