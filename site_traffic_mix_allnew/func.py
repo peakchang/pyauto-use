@@ -24,35 +24,117 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 
+test = None
+test = "ok"
+
+
+
+# def changeIp():
+#     getIp = ""
+#     try:
+#         print('아이피 변경 언제??')
+#         os.system('adb server start')
+#         client = AdbClient(host="127.0.0.1", port=5037)
+#         device = client.devices()  # 디바이스 1개
+#         if len(device) == 0:
+#             print('디바이스가 없냐 왜;;;')
+
+#         print(device)
+#         ondevice = device[0]
+#         print(f"온디바이스ondevice : {ondevice}")
+#         ondevice.shell("input keyevent KEYCODE_POWER")
+#         ondevice.shell("svc data disable")
+#         ondevice.shell("settings put global airplane_mode_on 1")
+#         ondevice.shell("am broadcast -a android.intent.action.AIRPLANE_MODE --ez state true")
+#         time.sleep(0.5)
+#         ondevice.shell("svc data enable")
+#         ondevice.shell("settings put global airplane_mode_on 0")
+#         ondevice.shell("am broadcast -a android.intent.action.AIRPLANE_MODE --ez state false")
+#         print('아이피 변경 함??')
+#         time.sleep(3)
+#         success, res = request_safely_get("https://api.ip.pe.kr/json/")
+#         return res['ip']
+#     except Exception as e:
+#         print(str(e))
+#         pass
+
+
 def changeIp():
-    getIp = ""
     try:
         print('아이피 변경 언제??')
-        os.system('adb server start')
+        
+        os.system('adb kill-server')
+        time.sleep(0.5)
+        os.system('adb start-server')
+        time.sleep(1)
+        
         client = AdbClient(host="127.0.0.1", port=5037)
-        device = client.devices()  # 디바이스 1개
-
-        if len(device) == 0:
-            print('디바이스가 없냐 왜;;;')
-
-        print(device)
-        ondevice = device[0]
-        print(f"온디바이스ondevice : {ondevice}")
+        
+        device = []
+        exception_holder = [None]
+        
+        def get_devices():
+            try:
+                result = client.devices()
+                device.extend(result)
+            except Exception as e:
+                exception_holder[0] = e
+        
+        thread = threading.Thread(target=get_devices)
+        thread.daemon = True
+        thread.start()
+        thread.join(timeout=5)
+        
+        if thread.is_alive():
+            print("ADB 응답 타임아웃! 5초 경과")
+            return None
+        
+        if exception_holder[0]:
+            print(f"디바이스 조회 에러: {exception_holder[0]}")
+            return None
+        
+        # 에뮬레이터 제외하고 실제 디바이스만 필터링
+        real_devices = [d for d in device if not d.serial.startswith('emulator-')]
+        
+        print(f"전체 디바이스: {len(device)}개")
+        print(f"실제 휴대폰: {len(real_devices)}개")
+        
+        if len(real_devices) == 0:
+            print('실제 휴대폰이 연결되지 않음!')
+            return None
+        
+        ondevice = real_devices[0]
+        print(f"사용할 디바이스: {ondevice.serial}")
+        
+        # 화면 켜기
         ondevice.shell("input keyevent KEYCODE_POWER")
+        time.sleep(0.3)
+        
+        # 비행기 모드 ON
         ondevice.shell("svc data disable")
         ondevice.shell("settings put global airplane_mode_on 1")
         ondevice.shell("am broadcast -a android.intent.action.AIRPLANE_MODE --ez state true")
-        time.sleep(0.5)
-        ondevice.shell("svc data enable")
+        time.sleep(1.5)
+        
+        # 비행기 모드 OFF
         ondevice.shell("settings put global airplane_mode_on 0")
         ondevice.shell("am broadcast -a android.intent.action.AIRPLANE_MODE --ez state false")
-        print('아이피 변경 함??')
+        ondevice.shell("svc data enable")
+        
+        print('아이피 변경 완료')
         time.sleep(3)
+        
         success, res = request_safely_get("https://api.ip.pe.kr/json/")
-        return res['ip']
+        if success and res and 'ip' in res:
+            print(f"새 IP: {res['ip']}")
+            return res['ip']
+        else:
+            print("IP 조회 실패")
+            return None
+        
     except Exception as e:
-        pass
-
+        print(f"에러 발생: {str(e)}")
+        return None
 
 
 
@@ -207,320 +289,6 @@ def _focus_and_close_other_chromes(target_title: str) -> None:
         except Exception:
             # 어떤 창은 닫기 막혀있을 수 있음 → 무시
             pass
-
-# def focus_window(winNames):
-#     try:
-#         user32 = ctypes.windll.user32
-#         foreground_window = user32.GetForegroundWindow()
-#         window = gw.Window(foreground_window)
-#         chkDriver = False
-
-#         print(winNames)
-#         for winName in winNames:
-#             print(window.title)
-#             if winName in window.title:
-#                 chkDriver = True
-#                 break
-#             else:
-#                 windows = Desktop(backend="uia").windows()
-#                 for window in windows:
-#                     if winName in window.window_text():
-#                         window.set_focus()
-#                         break
-#         return chkDriver
-            
-
-#     except Exception as e:
-#         print(str(e))
-#         pass
-
-
-# def focus_chrome_window_and_tab(driver, winNames):
-#     """
-#     크롬 창을 찾아서 활성화하고, winNames의 모든 키워드를 포함한 탭으로 전환
-#     """
-#     try:
-#         if isinstance(winNames, str):
-#             winNames = [winNames]
-        
-#         print(f"[INFO] Finding Chrome with ALL keywords: {winNames}")
-        
-#         # 1단계: 현재 포커스된 창이 Chrome인지 확인
-#         is_chrome_focused = check_if_chrome_focused()
-        
-#         if not is_chrome_focused:
-#             print("[INFO] 현재 Chrome 창이 아님 → Chrome 창 활성화 시도...")
-            
-#             # 여러 방법으로 Chrome 활성화 시도
-#             chrome_activated = activate_chrome_window()
-            
-#             if not chrome_activated:
-#                 print("[ERROR] ❌ Chrome 창을 활성화하지 못했습니다")
-#                 print("[RESULT] Chrome 창 활성화 실패 → return False")
-#                 return False
-#         else:
-#             print("[INFO] ✅ 이미 Chrome 창이 포커스되어 있음")
-        
-#         print("[CHECK] Chrome 창 활성화 상태: ✅ 성공")
-        
-#         # 2단계: 탭 찾기
-#         time.sleep(0.5)  # 안정화 대기
-        
-#         print("[INFO] 이제 탭 검색 시작...")
-#         tab_found = check_and_switch_tab_all_keywords(driver, winNames)
-        
-#         if tab_found:
-#             print("[RESULT] ✅✅ Chrome 창 활성화 성공 + 탭 찾기 성공 → return True")
-#             return True
-#         else:
-#             print("[RESULT] ✅❌ Chrome 창 활성화 성공 BUT 탭 찾기 실패 → return False")
-#             return False
-            
-#     except Exception as e:
-#         print(f"[ERROR] focus_chrome_window_and_tab 오류: {str(e)}")
-#         import traceback
-#         traceback.print_exc()
-#         return False
-
-
-# def check_if_chrome_focused():
-#     """현재 포커스된 창이 Chrome인지 확인"""
-#     try:
-#         user32 = ctypes.windll.user32
-#         foreground_window = user32.GetForegroundWindow()
-#         gw_window = gw.Window(foreground_window)
-#         title = gw_window.title
-        
-#         print(f"[INFO] 현재 포커스 창: {title}")
-        
-#         is_chrome = "Chrome" in title or "chrome" in title.lower()
-#         return is_chrome
-#     except:
-#         return False
-
-
-# def activate_chrome_window():
-#     """여러 방법으로 Chrome 창 활성화 시도"""
-    
-#     # 방법 1: pygetwindow로 찾기
-#     print("\n[방법 1] pygetwindow로 Chrome 창 찾기...")
-#     try:
-#         all_windows = gw.getAllTitles()
-#         print(f"  → 총 {len(all_windows)}개 창 발견")
-        
-#         for title in all_windows:
-#             if "Chrome" in title and title.strip():  # 빈 제목 제외
-#                 print(f"  → Chrome 창 발견: {title}")
-#                 try:
-#                     chrome_win = gw.getWindowsWithTitle(title)[0]
-#                     chrome_win.activate()
-#                     time.sleep(0.5)
-                    
-#                     # 활성화 확인
-#                     if check_if_chrome_focused():
-#                         print(f"  ✅ [방법 1] 성공!")
-#                         return True
-#                 except Exception as e:
-#                     print(f"  ✗ 활성화 실패: {str(e)}")
-#                     continue
-#     except Exception as e:
-#         print(f"  ✗ [방법 1] 실패: {str(e)}")
-    
-#     # 방법 2: pywinauto Desktop으로 찾기
-#     print("\n[방법 2] pywinauto Desktop으로 Chrome 창 찾기...")
-#     try:
-#         windows = Desktop(backend="uia").windows()
-#         print(f"  → 총 {len(windows)}개 창 검색 중...")
-        
-#         for uia_window in windows:
-#             try:
-#                 window_title = uia_window.window_text()
-                
-#                 if "Chrome" in window_title or "Google Chrome" in window_title:
-#                     print(f"  → Chrome 창 발견: {window_title}")
-                    
-#                     # 최소화 해제
-#                     try:
-#                         if uia_window.is_minimized():
-#                             print(f"  → 최소화 상태 → 복원 중...")
-#                             uia_window.restore()
-#                             time.sleep(0.3)
-#                     except:
-#                         pass
-                    
-#                     # 포커스 설정
-#                     uia_window.set_focus()
-#                     time.sleep(0.5)
-                    
-#                     # 활성화 확인
-#                     if check_if_chrome_focused():
-#                         print(f"  ✅ [방법 2] 성공!")
-#                         return True
-#             except Exception as e:
-#                 continue
-#     except Exception as e:
-#         print(f"  ✗ [방법 2] 실패: {str(e)}")
-    
-#     # 방법 3: win32gui로 강제 활성화
-#     print("\n[방법 3] win32gui로 Chrome 창 강제 활성화...")
-#     try:
-#         import win32gui
-#         import win32con
-        
-#         def enum_windows_callback(hwnd, results):
-#             if win32gui.IsWindowVisible(hwnd):
-#                 title = win32gui.GetWindowText(hwnd)
-#                 if "Chrome" in title:
-#                     results.append((hwnd, title))
-        
-#         chrome_windows = []
-#         win32gui.EnumWindows(enum_windows_callback, chrome_windows)
-        
-#         print(f"  → {len(chrome_windows)}개 Chrome 창 발견")
-        
-#         for hwnd, title in chrome_windows:
-#             print(f"  → 시도: {title}")
-#             try:
-#                 # 최소화 해제
-#                 if win32gui.IsIconic(hwnd):
-#                     win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-#                     time.sleep(0.3)
-                
-#                 # 맨 앞으로 가져오기
-#                 win32gui.SetForegroundWindow(hwnd)
-#                 time.sleep(0.5)
-                
-#                 # 활성화 확인
-#                 if check_if_chrome_focused():
-#                     print(f"  ✅ [방법 3] 성공!")
-#                     return True
-#             except Exception as e:
-#                 print(f"  ✗ 실패: {str(e)}")
-#                 continue
-#     except ImportError:
-#         print(f"  ✗ [방법 3] pywin32 미설치")
-#     except Exception as e:
-#         print(f"  ✗ [방법 3] 실패: {str(e)}")
-    
-#     # 방법 4: Alt+Tab 시뮬레이션
-#     print("\n[방법 4] 키보드 입력으로 Chrome 창 찾기...")
-#     try:
-#         import pyautogui
-        
-#         # 현재 열린 모든 창 제목 가져오기
-#         all_windows = gw.getAllTitles()
-#         chrome_windows = [w for w in all_windows if "Chrome" in w and w.strip()]
-        
-#         if chrome_windows:
-#             print(f"  → Chrome 창 {len(chrome_windows)}개 발견")
-            
-#             # Alt+Tab으로 전환 시도
-#             for _ in range(len(all_windows)):
-#                 pyautogui.keyDown('alt')
-#                 pyautogui.press('tab')
-#                 time.sleep(0.2)
-#                 pyautogui.keyUp('alt')
-#                 time.sleep(0.3)
-                
-#                 if check_if_chrome_focused():
-#                     print(f"  ✅ [방법 4] 성공!")
-#                     return True
-#     except ImportError:
-#         print(f"  ✗ [방법 4] pyautogui 미설치")
-#     except Exception as e:
-#         print(f"  ✗ [방법 4] 실패: {str(e)}")
-    
-#     print("\n❌ 모든 방법 실패")
-#     return False
-
-
-# def check_and_switch_tab_all_keywords(driver, target_keywords):
-#     """모든 target_keywords를 포함한 탭으로 전환"""
-#     try:
-#         if isinstance(target_keywords, str):
-#             target_keywords = [target_keywords]
-        
-#         current_window = driver.current_window_handle
-#         all_windows = driver.window_handles
-        
-#         print(f"[TAB] 총 {len(all_windows)}개 탭 확인 중...")
-#         print(f"[TAB] 필수 키워드 (모두 포함 필요): {target_keywords}")
-        
-#         for idx, window_handle in enumerate(all_windows):
-#             try:
-#                 driver.switch_to.window(window_handle)
-#                 time.sleep(0.1)
-                
-#                 current_title = driver.title
-#                 print(f"\n[TAB {idx+1}/{len(all_windows)}] 확인: {current_title}")
-                
-#                 all_keywords_found = True
-#                 matched_keywords = []
-#                 missing_keywords = []
-                
-#                 for keyword in target_keywords:
-#                     if keyword in current_title:
-#                         print(f"  ✓ '{keyword}' 포함됨")
-#                         matched_keywords.append(keyword)
-#                     else:
-#                         print(f"  ✗ '{keyword}' 없음")
-#                         missing_keywords.append(keyword)
-#                         all_keywords_found = False
-                
-#                 if all_keywords_found:
-#                     print(f"\n[TAB SUCCESS] ✓✓✓ 매칭 성공!")
-#                     print(f"  → 모든 키워드 포함: {matched_keywords}")
-#                     print(f"  → 탭 제목: '{current_title}'")
-#                     return True
-#                 else:
-#                     print(f"  → 탈락 (누락된 키워드: {missing_keywords})")
-                
-#             except Exception as e:
-#                 print(f"[TAB WARNING] 탭 {idx+1} 확인 실패: {str(e)}")
-#                 continue
-        
-#         print(f"\n[TAB FAIL] ❌ 모든 키워드를 포함한 탭을 찾지 못했습니다")
-        
-#         try:
-#             driver.switch_to.window(current_window)
-#         except:
-#             pass
-        
-#         return False
-        
-#     except Exception as e:
-#         print(f"[ERROR] check_and_switch_tab_all_keywords 오류: {str(e)}")
-#         import traceback
-#         traceback.print_exc()
-#         return False
-
-
-# # ===== 디버깅 함수 =====
-
-# def debug_all_windows():
-#     """시스템의 모든 창 출력 (디버깅용)"""
-#     print("\n" + "="*70)
-#     print("🔍 시스템의 모든 창 목록:")
-#     print("="*70)
-    
-#     try:
-#         all_titles = gw.getAllTitles()
-#         chrome_count = 0
-        
-#         for idx, title in enumerate(all_titles):
-#             if title.strip():  # 빈 제목 제외
-#                 is_chrome = "Chrome" in title
-#                 marker = " ← Chrome!" if is_chrome else ""
-#                 print(f"{idx+1}. {title}{marker}")
-#                 if is_chrome:
-#                     chrome_count += 1
-        
-#         print(f"\n총 {len(all_titles)}개 창 중 Chrome: {chrome_count}개")
-#     except Exception as e:
-#         print(f"오류: {str(e)}")
-    
-#     print("="*70 + "\n")
-    
 
 
 
@@ -679,7 +447,7 @@ def load_notwork_safely_post(site_link: str, data = None, timeout: int = 10, ret
             
             # 타임아웃 설정으로 무한 대기 방지
             response = requests.post(
-                f"{site_link}/api/v7/res_traffic_work/load_notwork",
+                site_link,
                 json=data,
                 timeout=timeout
             )
@@ -763,3 +531,234 @@ class HistoryTracker:
     def back_count_available(self):
         """뒤로갈 수 있는 횟수"""
         return self.current_position - 1
+    
+
+
+# 네이버 검색 함수! PC / 모바일 동일!
+def naverSearch(driver, keyword):
+    # 시작!!! 네이버 검색!!
+    while True:
+        wait_float_timer(0,1)
+        pg.moveTo(160,150)
+        pg.leftClick()
+
+        try:
+            wait_float(0.5,0.8)
+            mainSearchTab = driver.find_element(by=By.CSS_SELECTOR, value="#MM_SEARCH_FAKE")
+            mainSearchTab.click()
+        except Exception as e:
+            print('#MM_SEARCH_FAKE 찾기 오류')
+            pass
+
+        try:
+            wait_float(0.5,0.8)
+            subSearchTab = driver.find_element(by=By.CSS_SELECTOR, value="#query")
+            subSearchTab.click()
+        except Exception as e:
+            print('#query 찾기 오류')
+            pass
+
+        try:
+            wait_float(0.5,0.8)
+            subSearchTab = driver.find_element(by=By.CSS_SELECTOR, value="#nx_query")
+            subSearchTab.click()
+        except Exception as e:
+            print('#nx_query 찾기 오류')
+            pass
+
+        try:
+            wait_float(1.2,1.9)
+            pg.hotkey('ctrl', 'a')
+            pg.press('delete')
+            wait_float(1.2,1.9)
+            cb.copy(keyword)
+            pg.hotkey('ctrl', 'v')
+            wait_float(1.2,1.9)
+        except Exception as e:
+            print('붙여넣기 오류')
+            pass
+
+        print('검색 붙여넣기 완료~')
+
+        # 검색 완료 엔터!!!
+        try:
+            subSearchTab = driver.find_element(by=By.CSS_SELECTOR, value="#query")
+            searchVal = subSearchTab.get_attribute('value')
+            if searchVal is not None and searchVal == keyword:
+                subSearchTab.send_keys(Keys.ENTER)
+                break
+        except Exception as e:
+            print('#query 결과 찾기 오류')
+            pass
+
+        try:
+            subSearchTab = driver.find_element(by=By.CSS_SELECTOR, value="#nx_query")
+            searchVal = subSearchTab.get_attribute('value')
+            
+            if searchVal is not None and searchVal == keyword:
+                subSearchTab.send_keys(Keys.ENTER)
+                break
+        except Exception as e:
+            print('#nx_query 결과 찾기 오류')
+            pass
+
+        print('검색 엔터 완료!!')
+    
+    # 검색 창 제대로 나올때까지 대기 or F5
+    while True:
+        try:
+            wait_float_timer(3,4)
+            print('검색 확인 START!!!')
+            focusChk = focus_target_chrome(driver, [keyword, '네이버', '검색'])
+            subSearchTab1 = driver.find_elements(by=By.CSS_SELECTOR, value="#query")
+            subSearchTab2 = driver.find_elements(by=By.CSS_SELECTOR, value="#nx_query")
+            if focusChk and (len(subSearchTab1) > 0 or len(subSearchTab2) > 0):
+                break
+            else:
+                pg.press('F5')
+        except:
+            pass
+
+def clickScrollOtherMobile(driver,keyword):
+    # 모바일 버전으로 작업시!!
+    while True:
+        try:
+            sections = driver.find_elements(by=By.CSS_SELECTOR, value=".fds-default-mode")
+            if len(sections) > 0:
+                break
+        except:
+            pass
+        
+    onotherList = []  # [(text, WebElement), ...] 형태로 저장
+    for sec in sections:
+        # 1) 섹션 안에 fds-web-root 가 있으면 제외
+        if sec.find_elements(By.CSS_SELECTOR, ".fds-web-root"):
+            continue
+
+        # 2) 없으면 타이틀 후보들 수집
+        elems = sec.find_elements(By.CSS_SELECTOR,".fds-comps-right-image-text-title, .sds-comps-text-type-headline1")
+
+
+        keywords = ["더보기", "찾는", "콘텐츠", "인기글", "지식", "동영상"]
+        for el in elems:
+            addStatus = True
+            for keyword in keywords:
+                if keyword in el.text:
+                    addStatus = False
+                
+            if addStatus == True:
+                onotherList.append(el)
+    for data in onotherList:
+        print(data.text)
+
+    workOnotherVal = random.randrange(0, len(onotherList) - 1)
+    forClickEle = onotherList.pop(workOnotherVal)
+    driver.set_page_load_timeout(15)
+    forClickEle.click()
+
+    scrollRanVal = random.randrange(8, 15)
+    for k in range(scrollRanVal):
+        print('스크롤 중~~~')
+        pg.moveTo(300,400)
+        pg.scroll(-150)
+        if test == 'ok':
+            wait_float(0.1,0.5)
+        else:
+            wait_float(5.5,7.5)
+
+
+def clickScrollOtherPC(driver,keyword):
+    # PC 버전으로 작업시!!
+    while True:
+        try:
+            sections = driver.find_elements(by=By.CSS_SELECTOR, value=".api_subject_bx")
+            if len(sections) > 0:
+                break
+        except:
+            pass
+
+    onotherList = []  # [(text, WebElement), ...] 형태로 저장
+    for sec in sections:
+        # 1) 섹션 안에 fds-web-root 가 있으면 제외 (웹문서 영역)
+        if sec.find_elements(By.CSS_SELECTOR, ".fds-web-root"):
+            continue
+
+        # 2) 없으면 타이틀 후보들 수집
+        elems = sec.find_elements(
+            By.CSS_SELECTOR,
+            ".fds-comps-right-image-text-title, .sds-comps-text-type-headline1"
+        )
+
+
+        keywords = ["더보기", "찾는", "콘텐츠", "인기글", "지식", "동영상"]
+        for el in elems:
+            addStatus = True
+            for keyword in keywords:
+                if keyword in el.text:
+                    addStatus = False
+                
+            if addStatus == True:
+                onotherList.append(el)
+
+    for data in onotherList:
+        print(data.text)
+
+    workOnotherVal = random.randrange(0, len(onotherList) - 1)
+    forClickEle = onotherList.pop(workOnotherVal)
+    driver.set_page_load_timeout(15)
+    forClickEle.click()
+
+    scrollRanVal = random.randrange(8, 15)
+    for k in range(scrollRanVal):
+        print('스크롤 중~~~')
+        pg.moveTo(300,400)
+        pg.scroll(-150)
+        if test == 'ok':
+            wait_float(0.1,0.5)
+        else:
+            wait_float(5.5,7.5)
+
+
+
+def backToSearchMobile(driver,keyword):
+    actNum = 0
+    while True:
+        actNum += 1
+        try:
+            current_url = driver.current_url
+            focusChk = focus_target_chrome(driver, [keyword, '네이버', '검색'])
+            naverChk = focus_target_chrome(driver, ['NAVER'])
+            print(focusChk)
+            print(naverChk)
+            if focusChk or naverChk:
+                print('체크 확인! break')
+                break
+            else:
+                print('체크 체크 안됨! 다음으로!')
+                if actNum % 2 == 0:
+                    driver.forward()
+                else:
+                    driver.execute_script("window.history.foward()")
+            wait_float_timer(2,3)
+
+            print('URL 동일한지 비교!')
+            if driver.current_url == current_url:
+                print('URL 이 동일!!')
+                if actNum % 5 == 0:
+                    pg.moveTo(30,60)
+                    pg.leftClick()
+                elif actNum % 2 == 0:
+                    driver.back()
+                else:
+                    driver.execute_script("window.history.back()")
+            wait_float_timer(3,4)
+        except:
+            pass
+
+
+
+def backToSearchPC(driver,keyword):
+    while True:
+        focusChk = focus_target_chrome(driver, [keyword, '네이버', '검색'])
+        if focusChk:
+            break
