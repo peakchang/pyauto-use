@@ -1,12 +1,11 @@
 from func import *
 
-
+test = None
+test = "ok"
 
 def trfficScript(getDict):
 
-    testWork = 'ok'
     workType = {}
-    # testWork = None
     siteLink = "https://happy-toad2.shop"
 
     # while True:
@@ -17,6 +16,10 @@ def trfficScript(getDict):
     #     print(res)
     #     pg.alert('대기요!!!')
 
+    success, res = request_safely_get(f"{siteLink}/api/v7/res_traffic_work/get_webclass")
+    workType['web_class'] = res['web_class']
+
+    pg.alert('wkaaks?! ')
     
 
 
@@ -89,6 +92,7 @@ def trfficScript(getDict):
                         # pcUser = getpass.getuser()
                         user_data_dir = tempfile.mkdtemp(prefix="selenium_profile_")
                         options = Options()
+                        options.page_load_strategy = 'eager'
                         options.add_argument(f"--user-data-dir={user_data_dir}")  # 프로필 분리(누수 ↓)
                         service = Service()  # chromedriver PATH 잡혀있다고 가정
                         options.add_experimental_option("excludeSwitches", ["enable-automation"])
@@ -115,6 +119,7 @@ def trfficScript(getDict):
                             try:
                                 user_data_dir = tempfile.mkdtemp(prefix="selenium_profile_")
                                 options = Options()
+                                options.page_load_strategy = 'eager'
                                 options.add_argument(f"--user-data-dir={user_data_dir}")  # 프로필 분리(누수 ↓)
                                 service = Service()  # chromedriver PATH 잡혀있다고 가정
                                 options.add_argument(f'user-agent={userAgentInfo}')
@@ -165,6 +170,9 @@ def trfficScript(getDict):
             workArr = create_active_array(activeArrLengthArr, activeArrInnerArr)
             print(workArr)
 
+            if test:
+                workArr = ['work','work','work']
+
             # 핵심 부분!!!
             for work in workArr:
                 print(work)
@@ -178,29 +186,50 @@ def trfficScript(getDict):
                     # not_work 작업!!! 아무거나 하나 클릭하기!!
                     if workType['pr_work_type'] == 'pc':
                         clickScrollOtherPC(driver,workInfo['pk_content'])
+                        print('PC 클릭 및 스크롤 완료!')
                         backToSearchPC(driver,workInfo['pk_content'])
+                        print('원래 창 복귀 완료!')
                     else:
                         clickScrollOtherMobile(driver,workInfo['pk_content'])
+                        print('모바일 클릭 및 스크롤 완료!')
                         backToSearchMobile(driver,workInfo['pk_content'])
+                        print('원래 창 복귀 완료!')
                 elif work == 'work':
-                    success, res = load_notwork_safely_post(f"{siteLink}/api/v7/res_traffic_work/load_work_allnew", {'group' : 1})
-
+                    success, res = load_notwork_safely_post(f"{siteLink}/api/v7/res_traffic_work/load_work", {'group' : workType['pr_group']})
                     print(res)
-                    pg.alert('잠깐만 체크좀?')
-
                     workInfo = res['get_work']
-                    naverSearch(driver, workInfo['pk_content'])
+                    naverSearch(driver, workInfo['st_subject'])
+
                     # not_work 작업!!! 아무거나 하나 클릭하기!!
                     if workType['pr_work_type'] == 'pc':
-                        clickScrollOtherPC(driver,workInfo['pk_content'])
-                        backToSearchPC(driver,workInfo['pk_content'])
+                        clickScrollOtherPC(driver,workInfo['st_subject'])
+                        print('PC 클릭 및 스크롤 완료!')
+                        backToSearchPC(driver,workInfo['st_subject'])
+                        print('원래 창 복귀 완료!')
                     else:
-                        clickScrollOtherMobile(driver,workInfo['pk_content'])
-                        backToSearchMobile(driver,workInfo['pk_content'])
+                        # clickScrollOtherMobile(driver,workInfo['st_subject'])
+                        # print('모바일 클릭 및 스크롤 완료!')
+                        # backToSearchMobile(driver,workInfo['st_subject'])
+                        # print('원래 창 복귀 완료!')
 
-                    
-                    pg.alert('무작위 완료?!')
-                    
+                        # 1. 메인에서 2번 찾기
+                        for i in range(2):
+                            mainChk = searchContentInnerWork(driver, workType['web_class'], workInfo['st_link'], workInfo['st_same_link'], 'view')
+                            if mainChk:
+                                break
+
+                        if mainChk == False:
+                            # 페이징 시작!!
+                            pg.alert('페이징 시작!!')
+                            btns1 = driver.find_elements(by=By.CSS_SELECTOR, value=f".sds-comps-footer-content")
+                            for btn in btns1:
+                                if '검색결과' in btn:
+                                    btn.click()
+                            
+                            link_feed_more
+
+                    pg.alert('잠깐 대기요!!!!!!')
+
                     continue
                 elif work == 'realWork':
                     continue
@@ -229,6 +258,7 @@ def trfficScript(getDict):
 
             # 코드 실행 라인
         except Exception as e:
+            print('전체 오류임?')
             print(str(e))
             if driver:
                 driver.quit()

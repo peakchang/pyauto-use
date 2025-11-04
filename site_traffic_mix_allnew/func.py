@@ -542,6 +542,10 @@ def naverSearch(driver, keyword):
         pg.moveTo(160,150)
         pg.leftClick()
 
+        focus_target_chrome(driver, ['네이버','검색'])
+
+        
+
         try:
             wait_float(0.5,0.8)
             mainSearchTab = driver.find_element(by=By.CSS_SELECTOR, value="#MM_SEARCH_FAKE")
@@ -762,3 +766,70 @@ def backToSearchPC(driver,keyword):
         focusChk = focus_target_chrome(driver, [keyword, '네이버', '검색'])
         if focusChk:
             break
+
+
+
+def searchContentInnerWork(driver, webClass, loadLink, sameLink, workType):
+
+    targetWorkStatus = False
+    try:
+        targetList = driver.find_elements(by=By.CSS_SELECTOR, value=f"{webClass}")
+        actTarget = ""
+        print(targetList)
+        pg.alert('wait!!!!!!')
+        for target in targetList:
+            getHref = target.get_attribute('href')
+            st_link = str(loadLink).strip()
+            getHref = getHref.strip()
+
+            print(getHref)
+
+            if sameLink:
+                if st_link == getHref:
+                    print('여기까지 왔다!!')
+                    actTarget = target
+                    # workInfo['work_type'] 이 클릭이면 클릭 / 아니면 그냥 해당 위치로 스크롤만 하고 패스~
+                    targetWorkStatus = True
+                    break
+            else:
+                if st_link in getHref:
+                    actTarget = target
+                    # workInfo['work_type'] 이 클릭이면 클릭 / 아니면 그냥 해당 위치로 스크롤만 하고 패스~
+                    targetWorkStatus = True
+                    break
+    except:
+        pass
+
+    if targetWorkStatus == True:
+        wait_float(1.2,1.5)
+        browserMiddleMoveJsCode = """
+        var element = arguments[0];
+        var elementRect = element.getBoundingClientRect();
+        var absoluteElementTop = elementRect.top + window.pageYOffset;
+        var middle = absoluteElementTop - (window.innerHeight / 2);
+        window.scrollTo({ top: middle, behavior: 'smooth'});
+        """
+        driver.execute_script(browserMiddleMoveJsCode, actTarget)
+        wait_float(1.2,1.5)
+        print('위치로 갔다잉~')
+
+        if workType == 'click':
+            while True:
+                try:
+                    actTarget.click()
+                    break
+                except:
+                    wait_float(0.5,1.2)
+                    pg.scroll(-150)
+                    pass
+            
+            scrollRanVal = random.randrange(8, 15)
+            for k in range(scrollRanVal):
+                pg.moveTo(300,400)
+                pg.scroll(-150)
+                if test == 'ok':
+                    wait_float(0.1,0.5)
+                else:
+                    wait_float(5.5,7.5)
+
+    return targetWorkStatus
