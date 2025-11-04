@@ -24,8 +24,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 
+from urllib.parse import urlparse, parse_qs
+
 test = None
-test = "ok"
+# test = "ok"
 
 
 
@@ -443,8 +445,6 @@ def load_notwork_safely_post(site_link: str, data = None, timeout: int = 10, ret
     
     while True:
         try:
-            print('not work 불러와야지?!')
-            
             # 타임아웃 설정으로 무한 대기 방지
             response = requests.post(
                 site_link,
@@ -537,12 +537,28 @@ class HistoryTracker:
 # 네이버 검색 함수! PC / 모바일 동일!
 def naverSearch(driver, keyword):
     # 시작!!! 네이버 검색!!
+
+    errCount = 0
     while True:
+
         wait_float_timer(0,1)
-        pg.moveTo(160,150)
+        pg.moveTo(20,110)
         pg.leftClick()
 
-        focus_target_chrome(driver, ['네이버','검색'])
+        errCount += 1
+        # 5회 이상 오류시 F5 새로고침
+        if errCount > 5:
+            pg.press('F5')
+            wait_float_timer(3,4)
+        # 10회 이상 오류시 네이버 메인으로 강제 이동
+        elif errCount > 10:
+            driver.get('https://www.naver.com')
+            wait_float_timer(3,4)
+            focus_target_chrome(driver, ['NAVER'])
+            errCount = 0
+        else:
+            focus_target_chrome(driver, ['네이버','검색'])
+        
 
         
 
@@ -771,36 +787,39 @@ def backToSearchPC(driver,keyword):
 
 def searchContentInnerWork(driver, webClass, loadLink, sameLink, workType):
 
-    targetWorkStatus = False
+
+    returnVal = {"status" : False , "rate" : 0}
     try:
         targetList = driver.find_elements(by=By.CSS_SELECTOR, value=f"{webClass}")
         actTarget = ""
         print(targetList)
-        pg.alert('wait!!!!!!')
-        for target in targetList:
+        for idx, target in enumerate(targetList):
             getHref = target.get_attribute('href')
             st_link = str(loadLink).strip()
             getHref = getHref.strip()
 
             print(getHref)
+            wait_float(0.3,0.7)
 
             if sameLink:
                 if st_link == getHref:
+                    returnVal['rate'] = idx + 1
                     print('여기까지 왔다!!')
                     actTarget = target
                     # workInfo['work_type'] 이 클릭이면 클릭 / 아니면 그냥 해당 위치로 스크롤만 하고 패스~
-                    targetWorkStatus = True
+                    returnVal['status'] = True
                     break
             else:
                 if st_link in getHref:
+                    returnVal['rate'] = idx + 1
                     actTarget = target
                     # workInfo['work_type'] 이 클릭이면 클릭 / 아니면 그냥 해당 위치로 스크롤만 하고 패스~
-                    targetWorkStatus = True
+                    returnVal['status'] = True
                     break
     except:
         pass
 
-    if targetWorkStatus == True:
+    if returnVal['status'] == True:
         wait_float(1.2,1.5)
         browserMiddleMoveJsCode = """
         var element = arguments[0];
@@ -832,4 +851,101 @@ def searchContentInnerWork(driver, webClass, loadLink, sameLink, workType):
                 else:
                     wait_float(5.5,7.5)
 
-    return targetWorkStatus
+    return returnVal
+
+
+
+# 
+def searchContentRate(driver, workType, workInfo, type='view', env="mobile"):
+
+    returnVal = {"status" : False , "rate" : ""}
+    page = 1
+    # 먼저 메인 페이지에서 2번 검색 시도!!
+    for i in range(2):
+        rateWorkChk = searchContentInnerWork(driver, workType['web_class'], workInfo['st_link'], workInfo['st_same_link'], type)
+        if rateWorkChk['status']:
+            returnVal = {"status" : True , "rate" : f"{page}/{rateWorkChk['rate']}"}
+            if type == 'click':
+                if env == 'pc':
+                    backToSearchPC(driver, workInfo['st_subject'])
+                else:
+                    backToSearchMobile(driver, workInfo['st_subject'])
+            break
+
+    # 메인 페이지에 없으면 페이징 시작하기!!
+    if rateWorkChk['status'] == False:
+
+        # 먼저 검색 결과 탭으로 이동!! (이동하면 자동으로 2페이지)
+        while True:
+            wait_float_timer(1,2)
+            try:
+                btns1 = driver.find_elements(by=By.CSS_SELECTOR, value=f".sds-comps-footer-content")
+                for btn in btns1:
+                    print(btn.text)
+                    if '검색결과' in btn.text:
+                        btn.click()
+            except:
+                pass
+            try:
+                linkMore = driver.find_element(by=By.CSS_SELECTOR, value=f".link_feed_more")
+                linkMore.click()
+            except:
+                pass
+            wait_float_timer(1,2)
+            current_url = driver.current_url
+
+            parsed_url = urlparse(current_url)
+            query_params = parse_qs(parsed_url.query)
+            where = query_params.get('where', [None])[0]
+
+            if env == 'pc':
+                if where == 'web':
+                    break
+            else:
+                if where == 'm_web':
+                    break
+
+            pg.moveTo(20,110)
+            pg.leftClick()
+            pg.press('end')
+
+        # 페이지 이동 완료 했으면 검색 > 없으면 페이지 이동 > 반복 순으로 10페이지까지 시도!
+        for i in range(2, 11):
+            page = i
+            rateWorkChk = searchContentInnerWork(driver, workType['web_class'], workInfo['st_link'], workInfo['st_same_link'], type)
+            if rateWorkChk['status']:
+                returnVal = {"status" : True , "rate" : f"{page}/{rateWorkChk['rate']}"}
+                if type == 'click':
+                    if env == 'pc':
+                        backToSearchPC(driver, workInfo['st_subject'])
+                    else:
+                        backToSearchMobile(driver, workInfo['st_subject'])
+                break
+            else:
+                if i < 10:
+                    wait_float_timer(1,2)
+                    while True:
+                        try:
+                            if env == 'pc':
+                                pageBtns = driver.find_elements(by=By.CSS_SELECTOR, value=f".sc_page_inner a")
+                            else:
+                                pageBtns = driver.find_elements(by=By.CSS_SELECTOR, value=f".list_page a")
+                            for btn in pageBtns:
+                                print(btn.text)
+                                if str(page + 1) == btn.text:
+                                    btn.click()
+                                    break
+                            
+                            current_url = driver.current_url
+                            parsed_url = urlparse(current_url)
+                            query_params = parse_qs(parsed_url.query)
+                            nowPage = query_params.get('page', [None])[0]
+                            if nowPage == str(page + 1):
+                                break
+                        except:
+                            pass
+                    print(f'{page + 1}페이지 도착 완료!!!')
+                else:
+                    break
+    return returnVal
+
