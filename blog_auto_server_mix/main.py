@@ -3,7 +3,7 @@ from ongo import *
 
 
 def th():
-    getDict = {'ipval': ipVal.get(), 'loginChkVal' : loginChkVal.get(), 'directVal' : directVal.get(), 'saveChkVal' : saveChkVal.get(), 'linkTwoChkVal' : linkTwoChkVal.get()}
+    getDict = {'ipval': ipVal.get(), 'loginChkVal' : loginChkVal.get(), 'actVal' : actVal.get(), 'saveChkVal' : saveChkVal.get(), 'linkTwoChkVal' : linkTwoChkVal.get()}
     # getDict['nlist'] = idbox.current() + 1
     onth = threading.Thread(target=lambda: goScript(getDict))
     
@@ -51,15 +51,13 @@ linkTwoChkBox = Checkbutton(frame0,text="2link",variable=linkTwoChkVal)
 linkTwoChkBox.grid(column=3, row=2)
 linkTwoChkBox.select()
 
-directVal = StringVar()
-action1 = Radiobutton(frame0, text="PLUS", value='plus', variable=directVal)
+actVal = StringVar()
+action1 = Radiobutton(frame0, text="확인만", value='onlychk', variable=actVal)
 action1.grid(column=1, row=3, sticky="nsew")
 
-action2 = Radiobutton(frame0, text="MINUS", value='minus', variable=directVal)
-action2.grid(column=2, row=3)  # 다른 행에 배치
 
-action3 = Radiobutton(frame0, text="체크", value='chk', variable=directVal)
-action3.grid(column=3, row=3)  # 다른 행에 배치
+action3 = Radiobutton(frame0, text="체크", value='chk', variable=actVal)
+action3.grid(column=2, row=3)  # 다른 행에 배치
 
 
 

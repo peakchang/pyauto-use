@@ -6,16 +6,18 @@ from dotenv import load_dotenv
 
 def goScript(getDict):
 
+    print(getDict)
+
     load_dotenv()
     openApiKey = os.getenv("OPEN_API_KEY")
 
     # siteLink = "http://localhost:3020"
     siteLink = "https://happy-toad2.shop"
 
-    if getDict['loginChkVal']:
-        if getDict['directVal'] == '':
-            pg.alert('방향 설정을 해주세요')
-            sys.exit(1)
+    # if getDict['loginChkVal']:
+    #     if getDict['directVal'] == '':
+    #         pg.alert('방향 설정을 해주세요')
+    #         sys.exit(1)
 
     blogWb = load_workbook('./etc/blog_work.xlsx')
     blogEx = blogWb.active
@@ -55,7 +57,10 @@ def goScript(getDict):
 
     for i in range(2):
         
+        if getDict['loginChkVal'] and i == 0:
+            continue
         if i == 1:
+            
             # 엑셀 얼마나 차있는지 보기
             exMaxCount = 1
             while True:
@@ -74,7 +79,6 @@ def goScript(getDict):
                     break
 
             exCount = 1
-            getDict['loginChkVal'] = True
         
         print(f"i 번째 확인! {i}")
             
@@ -85,11 +89,12 @@ def goScript(getDict):
             else:
                 newsWork = not newsWork
 
-            startCount += 1 # 시작 카운트가 1이면 대기를 안하기 위해서 + 5회 작업시마다 10분씩 휴식!!
-            if (startCount - 1) % 5 == 0 and startCount != 1:
-                print(f"🔥 {startCount}는 5의 배수 + 1 입니다!")
-                print("8:30~10분 대기!!!")
-                wait_float(510.0,600.0)
+            if getDict['loginChkVal'] == False:
+                startCount += 1 # 시작 카운트가 1이면 대기를 안하기 위해서 + 5회 작업시마다 10분씩 휴식!!
+                if (startCount - 1) % 5 == 0 and startCount != 1:
+                    print(f"🔥 {startCount}는 5의 배수 + 1 입니다!")
+                    print("8:30~10분 대기!!!")
+                    wait_float(510.0,600.0)
 
 
             if newsWork == False:
@@ -127,7 +132,7 @@ def goScript(getDict):
                     break
 
                 # 텀 30~40 하니까 아이디가 계속 죽네;;; 10초씩 늘려봄!
-                elif startCount != 1 and testWork == False:
+                elif startCount != 1 and testWork == False and getDict['loginChkVal'] == False:
                     print("1분~1분 10초 대기!!!")
                     wait_float(60.0,70.5)
 
@@ -284,7 +289,7 @@ def goScript(getDict):
                             pg.confirm(text='아이디 풀기 성공?', buttons=['OK','NO'])
 
 
-                    if getDict['directVal'] == 'chk':
+                    if getDict['actVal'] == 'chk':
                         pg.alert('할거 하기! 이메일 인증이나 뭐나!')
                     elif loginStatus != False:
                         naverIdChkFuncOnlyName(driver,getDict,blogInfo,siteLink,workBlogNum)
@@ -309,7 +314,9 @@ def goScript(getDict):
                     blogEx.cell(exCount,5).value = "아이디 체크 완료"
                     blogWb.save(f"{getCwd}/etc/blog_work.xlsx")
                     continue
-            except:
+            except Exception as e:
+                print('아이디 체크가 끝나기 전에 에러가 나는거야?')
+                print(str(e))
                 pass
 
             
